@@ -1,0 +1,11 @@
+id: ADR-0005
+topic: committed-index
+scope: global
+status: rejected
+created: 2026-10-25
+applies_to:
+  - src/core/pack.ts
+decision: Commit a generated state.json index.
+why:
+  - It reintroduces a second source of truth that can drift.
+by: agent

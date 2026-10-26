@@ -1,0 +1,17 @@
+# Max 25 rules. One sentence each.
+# Changing an invariant requires a decision record.
+- id: INV-001
+  rule: Runtime dependencies stay limited to yaml.
+  applies_to:
+    - package.json
+  enforced_by: test/deps.test.ts
+- id: INV-002
+  rule: Decision records are append-only; superseded is derived, never written.
+- id: INV-003
+  rule: Human-facing documentation is limited to README.md; every other artifact is agent-facing.
+- id: INV-004
+  rule: Context packs are hard-capped by budgets.context_tokens.
+  enforced_by: test/pack.test.ts
+- id: INV-005
+  rule: Governance files never affect their own freshness fingerprint.
+  enforced_by: test/fingerprint.test.ts

@@ -1,0 +1,13 @@
+id: ADR-0002
+topic: record-format
+scope: global
+status: active
+created: 2026-10-25
+applies_to:
+  - schema/**
+decision: Decision records are YAML; Markdown is reserved for agent contracts and the README.
+why:
+  - Prose budgets cannot be enforced; data can.
+enforced_by: test/validate.test.ts
+verified_by: h1:989c68b4f5ad24aa07aa5b41a465e1400697b728018ac2ee5a0c06ea1357a56c
+by: agent

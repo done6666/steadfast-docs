@@ -1,0 +1,13 @@
+id: ADR-0001
+topic: runtime-deps
+scope: global
+status: active
+created: 2026-10-25
+applies_to:
+  - package.json
+decision: Runtime dependencies are limited to yaml.
+why:
+  - A tool that fights token bloat cannot ship a framework.
+enforced_by: test/deps.test.ts
+verified_by: h1:949f66afa39561aba9ed3b124198f2aedbd8bd2198f3789de0d9e05efb7e2305
+by: agent

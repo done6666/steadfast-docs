@@ -1,0 +1,13 @@
+id: ADR-0004
+topic: compiled-state
+scope: global
+status: active
+created: 2026-10-25
+applies_to:
+  - src/core/pack.ts
+decision: Context packs are compiled on demand and never committed.
+why:
+  - A committed copy reintroduces the staleness problem.
+enforced_by: test/pack.test.ts
+verified_by: h1:9661794c926eb1eff33875dc74834cdaffc56d714e5d75f814c74618f41168b2
+by: agent

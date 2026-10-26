@@ -1,0 +1,13 @@
+id: ADR-0003
+topic: freshness
+scope: global
+status: active
+created: 2026-10-25
+applies_to:
+  - src/core/fingerprint.ts
+decision: Freshness is a content fingerprint of governed files, not a commit sha.
+why:
+  - Verification happens before the commit that contains it.
+enforced_by: test/fingerprint.test.ts
+verified_by: h1:feb7ee5b400979239a209cc7de250eea9cb470d97f6ae389bb51b62560476ecf
+by: agent
