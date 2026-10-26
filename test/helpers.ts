@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -32,4 +32,25 @@ export function cli(args: string[], cwd: string): CliResult {
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
   };
+}
+
+export function cliAsync(args: string[], cwd: string): Promise<CliResult> {
+  return new Promise((resolvePromise) => {
+    const child = spawn(process.execPath, [CLI, ...args], {
+      cwd,
+      env: { ...process.env, NO_COLOR: "1" },
+    });
+
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.on("data", (chunk: Buffer) => {
+      stdout += chunk.toString("utf8");
+    });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString("utf8");
+    });
+    child.on("close", (code) => {
+      resolvePromise({ status: code ?? -1, stdout, stderr });
+    });
+  });
 }
