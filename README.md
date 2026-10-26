@@ -1,80 +1,131 @@
 # steadfast-docs
 
-**Normative project memory for AI coding agents.** Append-only decisions, compiled context packs, and staleness that fails the build.
+**Normative project memory for AI coding agents.**
 
 Documentation that only agents read. Humans ask; agents remember; CI enforces.
 
-## The problem
+[![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
+[![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
+[![tests](https://img.shields.io/badge/tests-94-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
+[![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
-Two failure modes kill agent-written documentation:
+## Why
+
+Agent-written documentation fails in two ways:
 
 1. **It rots.** A decision changes in conversation but not in the file. Copies multiply, and the agent follows the wrong one.
 2. **It floods the context.** A project with 40 ADRs is roughly 50K tokens. Accuracy drops as input grows, so the agent pays more and reasons worse.
 
-Writing more documentation makes both worse.
+Adding more documentation makes both worse.
 
 ## The idea
 
-Do not store what code can prove. Store only what a future agent cannot rediscover: the rule, the reason, and the alternatives already rejected.
+Store only what code cannot prove: the rule, the reason, and the alternatives already rejected.
 
-- **Invariants** — 10–25 laws, always loaded.
-- **Decisions** — append-only YAML records. Never edited, only superseded.
-- **Guards** — `deny / instead / check`, carried by decisions. This is what stops drift.
-- **Context pack** — compiled per task, hard token cap, only matching records.
+| Artifact | What it is | Budget |
+| --- | --- | --- |
+| **Invariants** | 10–25 laws, always loaded | ~400 tokens |
+| **Decisions** | append-only YAML, never edited | ≤160 tokens each |
+| **Guards** | `deny` / `instead` / `check` | ≤3 per decision |
+| **Context pack** | compiled per task, only matching records | hard token cap |
 
 No compiled state is committed. The pack is generated on demand, so there is no second copy to go stale.
 
+```mermaid
+flowchart LR
+  H[Human intent] --> A[Agent]
+  A --> C[Context pack]
+  C --> E[Edit]
+  E --> T[Tests]
+  T --> K["check --strict"]
+  K --> V[verify]
+  V --> D[Append decision]
+  D --> C
+  K -. fail .-> A
+```
+
 ## Quick start
+
+One-time setup. After this, you do not run the loop; the agent does.
 
 ```bash
 npx steadfast-docs init
-```
-
-This creates `.steadfast/` and appends a short contract to `AGENTS.md`. Then:
-
-```bash
-# the memory that applies to a task (the only thing an agent should read)
-npx steadfast-docs context --for src/billing/charge.ts
-
-# append a rule
-npx steadfast-docs new --scope billing --topic http-client \
-  --decision "All outbound HTTP goes through src/api/client.ts." \
-  --applies-to "src/billing/**" \
-  --status active \
-  --enforced-by test/api/client.contract.test.ts
-
-# before committing
-npx steadfast-docs check --strict
-```
-
-## Agent loop
-
-Install the loop into your agent:
-
-```bash
 npx steadfast-docs skill install --platform opencode   # or --platform claude
 ```
 
-It enforces: plan the paths → `context` → restate guards → edit → `check` → `verify` → append a decision.
-`check` also fails when a project copy drifts from `skills/steadfast/SKILL.md`.
+`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. From then on, you talk to the agent:
 
-After migrating a project, retire the old docs:
+> “Add a refund endpoint.”
 
-```bash
-npx steadfast-docs retire legacy-docs --apply
+The agent plans the paths, runs `context`, reads only the pack, implements, runs the tests, calls `check` and `verify`, and appends a decision when it made a non-obvious choice. You see a short summary and the decisions that need approval — never a document to review.
+
+## What a decision looks like
+
+```yaml
+id: ADR-0012
+topic: http-client
+scope: billing
+status: active
+applies_to: [src/billing/**]
+decision: All outbound HTTP goes through src/api/client.ts.
+why: [Retry and timeout live in one place.]
+guards:
+  - deny: "src/billing/** fetch"
+    instead: src/api/client.ts
+    check: eslint no-restricted-imports
+enforced_by: test/api/client.contract.test.ts
+verified_by: h1:...
 ```
 
-The command deletes the documentation and records the glob in `retired_docs`; `check` fails if it returns.
+About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 
 ## Why it does not rot
 
-- **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`. `check --diff main` compares against the merge base and rejects edits, deletions and renames of records.
-- **Content fingerprints.** `verified_by` is a hash of the files matched by `applies_to`, not a commit sha. Verify before committing; rebases cannot invalidate it.
+- **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`.
+- **Content fingerprints.** `verified_by` hashes the files matched by `applies_to`, not a commit sha. Verify before committing; rebases cannot invalidate it.
 - **Executable claims.** `enforced_by` is a test path or a `!command`. Rules without one are advisory and expire. `check` never executes code; `verify --trust` runs record commands explicitly.
-- **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. A pack that cannot fit fails closed instead of silently overflowing.
+- **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. A pack that cannot fit fails closed.
 - **Negative memory.** Rejected proposals are first-class records, so the agent does not re-litigate dead ends.
-- **Retired docs stay retired.** `steadfast retire legacy-docs --apply` deletes the old documentation and records the glob; `check` fails if it reappears. Git history is the archive.
+- **Retired docs stay retired.** `retire` deletes the old documentation and records the glob; `check` fails if it reappears. Git history is the archive.
 - **Decision debt.** `check --diff main` flags dependency and build changes that arrived without a decision.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `npx steadfast-docs init [--adopt]` | Scaffold `.steadfast/` and the `AGENTS.md` contract |
+| `npx steadfast-docs context --for <paths>` | Compile the token-budgeted pack for a task |
+| `npx steadfast-docs check --strict --diff main` | Validate schema, graph, freshness, paths, budgets and history |
+| `npx steadfast-docs new ...` | Append a decision record |
+| `npx steadfast-docs verify <ids> --assume` | Recompute fingerprints after the tests pass |
+| `npx steadfast-docs retire <path> --apply` | Delete legacy docs and enforce `retired_docs` |
+| `npx steadfast-docs skill install --platform opencode` | Install the agent loop (or `claude`) |
+
+## Evidence
+
+`benchmarks/pilot` is a synthetic multi-tenant billing ledger with a 10.5k-token legacy docs set and four contradictions.
+
+| Mode | Tasks | Passed | Avg context |
+| --- | ---: | ---: | ---: |
+| baseline (legacy docs) | 6 | 5 | 10,459 |
+| steadfast | 7 | 7 | 681 |
+| steadfast-retired | 1 | 1 | 777 |
+
+The main six tasks both passed; the win was **~15x less required context**. The seventh task was non-inferable: the docs put the refund cap in the nightly reporting job, the pack put it in the API. The baseline failed; the pack passed with the docs present and after `retire` deleted them. Staleness, duplicate topics and edited history were detected deterministically, while the legacy docs carried four undetected contradictions.
+
+[Full pilot report →](https://github.com/done6666/steadfast-docs/blob/main/benchmarks/pilot/RESULTS.md)
+
+## Adopting an existing repo
+
+```bash
+npx steadfast-docs init --adopt
+# let the agent draft invariants and decisions
+npx steadfast-docs check --strict
+npx steadfast-docs retire legacy-docs --apply
+```
+
+`retire` is a dry run by default. It refuses source files, the root `README.md`, `AGENTS.md` and symlinks. `--apply` deletes the documentation and records `legacy-docs/**` in `retired_docs`; `check` fails if it returns.
 
 ## What it is not
 
@@ -82,22 +133,17 @@ The command deletes the documentation and records the glob in `retired_docs`; `c
 - Not human documentation. In a steadfast project, humans talk to the agent and read code; the memory is machine-first.
 - Not a documentation generator. If a fact can be derived from code, derive it; do not store it.
 
-## Pilot
+## FAQ
 
-`benchmarks/pilot` is a synthetic multi-tenant billing ledger with a 10.5k-token legacy docs set, four contradictions and seven tasks. In the main six tasks both regimes passed; the required context was **10,459 tokens** for the legacy docs versus **328–1,068 (average ~680)** for compiled packs, about **15x** less. A seventh, non-inferable probe changed the result: the legacy docs place the refund cap in the reporting job, the pack places it in the API. The baseline failed that trap; the pack passed it, and passed again after `steadfast retire` deleted the docs. The memory layer also detected stale fingerprints, duplicate topics and edited history deterministically, while the legacy docs carried four undetected contradictions.
+**Do I have to run the commands?** No. `init` and `skill install` are one-time; after that the agent runs the loop. `check` in CI is the gate.
 
-Read confinement is now a first-class command: `steadfast retire` deletes the old docs and records the glob; `check` fails if they reappear.
+**Does it work with Claude Code, Codex, Cursor?** `AGENTS.md` is the contract; the skill installs for OpenCode or Claude. Any harness that can run shell commands can use the CLI.
 
-Full report: [benchmarks/pilot/RESULTS.md](https://github.com/done6666/steadfast-docs/blob/main/benchmarks/pilot/RESULTS.md).
+**What happens when a decision changes?** Append a new record with `--supersedes`; never edit the old one. `check --diff main` rejects edits, deletions and renames.
 
-## Example
+**What if the agent ignores the contract?** The commit or PR fails `check --strict`; the memory is enforced, not advisory.
 
-`examples/demo` is a five-decision project. Its full memory is 551 semantic tokens; the pack for `src/billing/charge.ts` is 398 tokens, including invariants, guards, rejected alternatives, tests and verification commands.
-
-```bash
-cd examples/demo
-node ../../dist/src/cli.js context --for src/billing/charge.ts
-```
+**Is 0.1.0 production-ready?** The protocol and CLI are covered by 94 tests, but the pilot is synthetic. Start with a non-critical repo.
 
 ## Development
 
@@ -114,8 +160,8 @@ node dist/src/cli.js check --strict
 
 ## Status
 
-0.1.0. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`, `retire`, `skill`.
-Next: a real-project pilot, then a benchmark harness.
+0.1.0 published. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`, `retire`, `skill`.
+Next: an MCP server for native tool calls and a real-project pilot.
 
 ## License
 
