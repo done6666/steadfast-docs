@@ -4,6 +4,7 @@
 
 Normative project memory for coding agents: append-only decisions, compiled context packs, enforced staleness.
 Behavior lives in `src/`; the contract lives in `schema/`; proof lives in `test/`.
+The agent loop lives in `skills/steadfast/SKILL.md` and is installed with `node dist/src/cli.js skill install`.
 
 ## Before editing
 

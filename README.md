@@ -47,6 +47,17 @@ npx steadfast-docs new --scope billing --topic http-client \
 npx steadfast-docs check --strict
 ```
 
+## Agent loop
+
+Install the loop into your agent:
+
+```bash
+npx steadfast-docs skill install --platform opencode   # or --platform claude
+```
+
+It enforces: plan the paths → `context` → restate guards → edit → `check` → `verify` → append a decision.
+`check` also fails when a project copy drifts from `skills/steadfast/SKILL.md`.
+
 ## Why it does not rot
 
 - **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`. `check --diff main` compares against the merge base and rejects edits, deletions and renames of records.
@@ -64,7 +75,7 @@ npx steadfast-docs check --strict
 
 ## Example
 
-`examples/demo` is a five-decision project. Its full memory is 551 semantic tokens; the pack for `src/billing/charge.ts` is 375 tokens, including invariants, guards, rejected alternatives, tests and verification commands.
+`examples/demo` is a five-decision project. Its full memory is 551 semantic tokens; the pack for `src/billing/charge.ts` is 398 tokens, including invariants, guards, rejected alternatives, tests and verification commands.
 
 ```bash
 cd examples/demo
@@ -82,12 +93,12 @@ npm test
 node dist/src/cli.js check --strict
 ```
 
-`verify` runs record-supplied `!commands` only with `--trust`. A CI sequence is: run the test suite, then `steadfast verify --assume <ids>` (add `--trust` only for `!command` records), then `steadfast check --strict`.
+`verify` runs record-supplied `!commands` only with `--trust`. A CI sequence is: run the test suite, then `steadfast verify --all --assume` (add `--trust` for `!command` records), then `steadfast check --strict`. For a subset, use `steadfast verify <ids> --run "<suite>"`.
 
 ## Status
 
-0.1.0. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`.
-Next: editor adapters, a benchmark harness, and a GitHub Action.
+0.1.0. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`, `skill`.
+Next: a real-project pilot, then a benchmark harness.
 
 ## License
 
