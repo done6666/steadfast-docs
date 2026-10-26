@@ -1,0 +1,16 @@
+id: ADR-0005
+topic: charge-idempotency
+scope: billing
+status: active
+created: 2026-10-25
+applies_to:
+  - src/billing/charge.ts
+decision: Every charge request carries an idempotency key.
+why:
+  - Network retries must not double-charge.
+guards:
+  - deny: "charge() without an idempotency key"
+    instead: "callers pass crypto.randomUUID()"
+enforced_by: test/api/client.contract.test.ts
+verified_by: h1:4cf447a38c2e20cbb37222e8a39181f180cff4c11c35f10453a39d33e5d26c80
+by: agent

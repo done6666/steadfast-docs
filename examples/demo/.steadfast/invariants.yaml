@@ -1,0 +1,17 @@
+# Max 25 rules. One sentence each.
+# Changing an invariant requires a decision record.
+- id: INV-001
+  rule: All outbound HTTP goes through src/api/client.ts.
+  applies_to:
+    - src/**
+  enforced_by: test/api/client.contract.test.ts
+- id: INV-002
+  rule: No runtime dependency without a decision record.
+  applies_to:
+    - package.json
+- id: INV-003
+  rule: Every active decision names an enforced_by check.
+- id: INV-004
+  rule: A superseded record is never edited.
+- id: INV-005
+  rule: Rejected proposals carry the reason they were refused.

@@ -1,0 +1,19 @@
+id: ADR-0001
+topic: http-client
+scope: billing
+status: active
+created: 2026-10-25
+applies_to:
+  - src/billing/**
+decision: All outbound HTTP from billing goes through src/api/client.ts.
+why:
+  - Timeout and cancellation are implemented once.
+rejected:
+  - "Direct fetch: retries and cancellation drift per call site."
+guards:
+  - deny: "src/billing/** direct fetch or axios import"
+    instead: src/api/client.ts
+    check: eslint no-restricted-imports
+enforced_by: test/api/client.contract.test.ts
+verified_by: h1:9530b92253bfd41b042346bd63695acf59860ec206da07472d20b7357b5733b0
+by: agent

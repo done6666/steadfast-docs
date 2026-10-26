@@ -1,0 +1,11 @@
+id: ADR-0004
+topic: retry
+scope: billing
+status: rejected
+created: 2026-10-25
+applies_to:
+  - src/billing/**
+decision: Use p-retry for backoff.
+why:
+  - Adds a dependency for twenty lines; the client already owns retries.
+by: agent

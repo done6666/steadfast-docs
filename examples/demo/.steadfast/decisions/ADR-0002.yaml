@@ -1,0 +1,13 @@
+id: ADR-0002
+topic: legacy-sync
+scope: billing
+status: active
+created: 2026-10-25
+applies_to:
+  - src/billing/legacy-sync.ts
+decision: legacy-sync sends one request per ledger row.
+why:
+  - Keeps failure isolated per row.
+enforced_by: test/api/client.contract.test.ts
+verified_by: h1:b03d2dbf215141d97db5157826d0fd818d512e28f735bc37ea7876f6a9bf0349
+by: agent

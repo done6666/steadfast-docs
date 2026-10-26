@@ -1,0 +1,20 @@
+id: ADR-0003
+topic: legacy-sync
+scope: billing
+status: active
+created: 2026-10-25
+applies_to:
+  - src/billing/legacy-sync.ts
+decision: legacy-sync batches ledger rows in groups of at most 100.
+why:
+  - Per-row requests exceeded the ledger rate limit at 2k rows.
+rejected:
+  - "Per-row writes: hit the ledger rate limit and made partial failure noisy."
+guards:
+  - deny: "a per-row await inside legacy-sync"
+    instead: "batch slices of 100 rows"
+enforced_by: test/api/client.contract.test.ts
+verified_by: h1:b03d2dbf215141d97db5157826d0fd818d512e28f735bc37ea7876f6a9bf0349
+supersedes:
+  - ADR-0002
+by: agent
