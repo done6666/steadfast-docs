@@ -24,8 +24,9 @@ Run:
 If `AGENTS.md` names a different invocation, use that one.
 
 Read the output. Do not open `.steadfast/decisions/`, superseded or retired
-records. The pack is the complete context you may use **only when its header
-says `omitted: 0`**.
+records. Do not read other documentation, ADRs, architecture notes or READMEs.
+They are the drift this system replaces. The pack is the complete context you
+may use **only when its header says `omitted: 0`**.
 
 When the path set grows, run the command again with the full set.
 If the header shows `omitted` above zero, the pack is incomplete: narrow the
