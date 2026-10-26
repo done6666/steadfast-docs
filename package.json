@@ -4,6 +4,15 @@
   "description": "Normative project memory for AI coding agents. Append-only decisions, compiled context packs, enforced staleness.",
   "type": "module",
   "license": "MIT",
+  "author": "done6666",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/done6666/steadfast-docs.git"
+  },
+  "homepage": "https://github.com/done6666/steadfast-docs#readme",
+  "bugs": {
+    "url": "https://github.com/done6666/steadfast-docs/issues"
+  },
   "bin": {
     "steadfast": "./dist/src/cli.js"
   },
@@ -16,6 +25,9 @@
   ],
   "engines": {
     "node": ">=20.11"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

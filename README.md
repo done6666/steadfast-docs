@@ -88,7 +88,7 @@ The command deletes the documentation and records the glob in `retired_docs`; `c
 
 Read confinement is now a first-class command: `steadfast retire` deletes the old docs and records the glob; `check` fails if they reappear.
 
-Full report: [`benchmarks/pilot/RESULTS.md`](benchmarks/pilot/RESULTS.md).
+Full report: [benchmarks/pilot/RESULTS.md](https://github.com/done6666/steadfast-docs/blob/main/benchmarks/pilot/RESULTS.md).
 
 ## Example
 
