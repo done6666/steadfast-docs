@@ -1,0 +1,6 @@
+node_modules/
+dist/
+coverage/
+.steadfast/tasks/
+*.tgz
+.DS_Store

@@ -1,0 +1,42 @@
+{
+  "name": "steadfast-docs",
+  "version": "0.1.0",
+  "description": "Normative project memory for AI coding agents. Append-only decisions, compiled context packs, enforced staleness.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "steadfast": "./dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "check": "npm run build && node dist/src/cli.js check --strict",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "documentation",
+    "adr",
+    "context",
+    "memory",
+    "coding-agents"
+  ],
+  "dependencies": {
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
