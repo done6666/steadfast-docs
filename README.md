@@ -73,6 +73,14 @@ It enforces: plan the paths → `context` → restate guards → edit → `check
 - Not human documentation. In a steadfast project, humans talk to the agent and read code; the memory is machine-first.
 - Not a documentation generator. If a fact can be derived from code, derive it; do not store it.
 
+## Pilot
+
+`benchmarks/pilot` is a synthetic multi-tenant billing ledger with a 10.5k-token legacy docs set, four contradictions and six tasks. On DeepSeek V4.1 Flash, both regimes passed every task; the required context was **10,459 tokens** for the legacy docs versus **328–1,068 (average 665)** for compiled packs, a **15.7x** reduction. The memory layer also detected stale fingerprints, duplicate topics and edited history deterministically, while the legacy docs carried four undetected contradictions.
+
+The pilot also found the next gap: agents still read the legacy docs unless the contract is explicit. Read confinement is the next hardening target.
+
+Full report: [`benchmarks/pilot/RESULTS.md`](benchmarks/pilot/RESULTS.md).
+
 ## Example
 
 `examples/demo` is a five-decision project. Its full memory is 551 semantic tokens; the pack for `src/billing/charge.ts` is 398 tokens, including invariants, guards, rejected alternatives, tests and verification commands.

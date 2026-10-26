@@ -1,0 +1,14 @@
+id: ADR-0001
+topic: money-minor
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/ledger/money.js
+  - packages/api/**
+decision: Amounts are integer minor units; the API and ledger reject fractions.
+why:
+  - Decimals disagreed between the API, the invoice and the warehouse.
+enforced_by: test/money.test.js
+verified_by: h1:f8dec888af5349352bc037d11f18fa2dc71fbce3580fb7f832b27a78cdeb7f51
+by: agent

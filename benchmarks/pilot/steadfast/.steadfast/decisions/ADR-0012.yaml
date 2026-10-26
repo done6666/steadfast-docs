@@ -1,0 +1,11 @@
+id: ADR-0012
+topic: money-decimal
+scope: global
+status: rejected
+created: 2026-10-26
+applies_to:
+  - packages/ledger/**
+decision: Store amounts as floating point decimals.
+why:
+  - Simpler SQL sums.
+by: agent

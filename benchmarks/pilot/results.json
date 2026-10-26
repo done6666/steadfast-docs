@@ -1,0 +1,524 @@
+[
+  {
+    "task": "task1",
+    "title": "Refund flow",
+    "mode": "baseline",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.687091ms)\n✔ charge is idempotent (0.171641ms)\n✔ charge rejects invalid amounts and missing keys (0.311216ms)\n✔ runtime dependencies stay empty (0.797828ms)\n✔ only the shared client calls fetch (1.124636ms)\n✔ append is idempotent per tenant and key (0.919496ms)\n✔ the ledger is append-only (0.286295ms)\n✔ refunds reduce the balance (0.198419ms)\n✔ minor units reject fractions (0.556791ms)\n✔ minor units reject negatives (0.095241ms)\n✔ addMinor adds integer amounts (0.083248ms)\n✔ formatMinor renders cents (8.837446ms)\n✔ event ids are idempotent (0.909266ms)\n✔ event ids are scoped per tenant (0.212322ms)\n✔ pending only returns pending events (0.217539ms)\n✔ the stub provider is registered (0.464664ms)\n✔ unknown providers are rejected (0.168818ms)\n✔ refund appends and reduces the balance (0.655033ms)\n✔ refund emits a refund outbox event (0.143523ms)\n✔ refund is idempotent (0.117597ms)\n✔ refund rejects invalid amounts and missing keys (0.266729ms)\n✔ refunds are tenant-scoped (0.218748ms)\n✔ the read model is tenant-scoped (0.897497ms)\n✔ summaries keep at most five entries (0.198184ms)\n✔ tenant id is required (0.492807ms)\n✔ tenant comparison is explicit (0.098196ms)\n✔ entries are tenant-scoped (0.249389ms)\nℹ tests 27\nℹ suites 0\nℹ pass 27\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 64.005634\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ refund appends a refund entry and an outbox event (0.596183ms)\n✔ refund rejects invalid input (0.244661ms)\n✔ refund is idempotent and does not duplicate the event (0.126311ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 37.82854\n"
+    },
+    "check": null,
+    "specialOk": true,
+    "special": {},
+    "contextTokens": null,
+    "baselineTokens": 10459,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0004",
+      "ADR-0005",
+      "ADR-0009"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      "packages/api/refunds.js",
+      "packages/ledger/outbox.js",
+      "test/outbox.test.js",
+      "test/refunds.test.js",
+      "test/traps/task1.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-baseline-task1-E4TVL8",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "670809d8dec69b6fedf4eb27c73319be20b19c42",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 225966
+    },
+    "timestamp": "2026-10-26T02:43:50.511Z"
+  },
+  {
+    "task": "task1",
+    "title": "Refund flow",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.684662ms)\n✔ charge is idempotent (0.173236ms)\n✔ charge rejects invalid amounts and missing keys (0.287729ms)\n✔ runtime dependencies stay empty (1.260365ms)\n✔ only the shared client calls fetch (1.142548ms)\n✔ append is idempotent per tenant and key (0.964116ms)\n✔ the ledger is append-only (0.298456ms)\n✔ refunds reduce the balance (0.202477ms)\n✔ minor units reject fractions (0.958846ms)\n✔ minor units reject negatives (0.161454ms)\n✔ addMinor adds integer amounts (0.180825ms)\n✔ formatMinor renders cents (10.879235ms)\n✔ event ids are idempotent (0.636682ms)\n✔ event ids are scoped per tenant (0.124306ms)\n✔ status updates can target a tenant when ids repeat (0.272616ms)\n✔ pending only returns pending events (0.127628ms)\n✔ the stub provider is registered (0.574022ms)\n✔ unknown providers are rejected (0.18251ms)\n✔ refund appends, reduces the balance, and emits an outbox event (0.778676ms)\n✔ refund is idempotent (0.165285ms)\n✔ refund idempotency is scoped per tenant (0.160745ms)\n✔ refund rejects a key already used by a charge (0.273275ms)\n✔ charge rejects a key already used by a refund (0.159108ms)\n✔ refund rejects invalid amounts, accounts and keys (0.27336ms)\n✔ the read model is tenant-scoped (0.553586ms)\n✔ summaries keep at most five entries (0.119337ms)\n✔ tenant id is required (0.549019ms)\n✔ tenant comparison is explicit (0.116426ms)\n✔ entries are tenant-scoped (0.191498ms)\nℹ tests 29\nℹ suites 0\nℹ pass 29\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 62.948545\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ refund appends a refund entry and an outbox event (0.577232ms)\n✔ refund rejects invalid input (0.249495ms)\n✔ refund is idempotent and does not duplicate the event (0.129526ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 39.045919\n"
+    },
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 10 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1134 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {},
+    "contextTokens": 640,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0004",
+      "ADR-0005",
+      "ADR-0009"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0001.yaml",
+      ".steadfast/decisions/ADR-0002.yaml",
+      ".steadfast/decisions/ADR-0004.yaml",
+      ".steadfast/decisions/ADR-0005.yaml",
+      ".steadfast/decisions/ADR-0009.yaml",
+      "packages/api/charges.js",
+      "packages/api/refunds.js",
+      "packages/ledger/outbox.js",
+      "test/outbox.test.js",
+      "test/refunds.test.js",
+      "test/traps/task1.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task1-t9G04X",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "584af85214611fab551024de2b1097f610b9fb3b",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 576259
+    },
+    "timestamp": "2026-10-26T02:43:50.859Z"
+  },
+  {
+    "task": "task2",
+    "title": "Second payment provider",
+    "mode": "baseline",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (1.169163ms)\n✔ charge is idempotent (0.286838ms)\n✔ charge rejects invalid amounts and missing keys (0.405209ms)\n✔ runtime dependencies stay empty (0.761276ms)\n✔ only the shared client calls fetch (1.123362ms)\n✔ append is idempotent per tenant and key (0.982895ms)\n✔ the ledger is append-only (0.284267ms)\n✔ refunds reduce the balance (0.2071ms)\n✔ minor units reject fractions (0.556792ms)\n✔ minor units reject negatives (0.094382ms)\n✔ addMinor adds integer amounts (0.100495ms)\n✔ formatMinor renders cents (9.375503ms)\n✔ event ids are idempotent (0.535155ms)\n✔ pending only returns pending events (0.168039ms)\n✔ the stub provider is registered (0.502618ms)\n✔ the acme provider is registered (0.566437ms)\n✔ providers are selected independently by name (0.131647ms)\n✔ the acme provider charges through the shared HTTP client (1.028074ms)\n✔ unknown providers are rejected (0.152957ms)\n✔ the read model is tenant-scoped (0.570489ms)\n✔ summaries keep at most five entries (0.116225ms)\n✔ tenant id is required (0.596317ms)\n✔ tenant comparison is explicit (0.109059ms)\n✔ entries are tenant-scoped (0.182464ms)\nℹ tests 24\nℹ suites 0\nℹ pass 24\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 55.566242\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ the acme provider is registered behind the port (0.386658ms)\n✔ no provider bypasses the shared HTTP client (0.715988ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 36.400088\n"
+    },
+    "check": null,
+    "specialOk": true,
+    "special": {},
+    "contextTokens": null,
+    "baselineTokens": 10459,
+    "missingRules": [],
+    "related": [
+      "ADR-0003",
+      "ADR-0007",
+      "ADR-0008",
+      "ADR-0015"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      "packages/provider/index.js",
+      "test/provider.test.js",
+      "packages/provider/acme.js",
+      "test/traps/task2.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-baseline-task2-EpAE0b",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "18f2b78ad18cd01628e761f596ed39c4b602559f",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 341597
+    },
+    "timestamp": "2026-10-26T02:43:51.005Z"
+  },
+  {
+    "task": "task2",
+    "title": "Second payment provider",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.618068ms)\n✔ charge is idempotent (0.161169ms)\n✔ charge rejects invalid amounts and missing keys (0.248642ms)\n✔ runtime dependencies stay empty (0.796277ms)\n✔ only the shared client calls fetch (1.873256ms)\n✔ append is idempotent per tenant and key (0.557062ms)\n✔ the ledger is append-only (0.181126ms)\n✔ refunds reduce the balance (0.112884ms)\n✔ minor units reject fractions (0.638987ms)\n✔ minor units reject negatives (0.09025ms)\n✔ addMinor adds integer amounts (0.092092ms)\n✔ formatMinor renders cents (9.414767ms)\n✔ event ids are idempotent (0.57501ms)\n✔ pending only returns pending events (0.143354ms)\n✔ the stub provider is registered (0.487226ms)\n✔ the acme provider is registered (0.515446ms)\n✔ the acme provider charges through the shared HTTP client (13.795836ms)\n✔ the acme provider reports provider failures (0.167992ms)\n✔ unknown providers are rejected (0.170956ms)\n✔ the read model is tenant-scoped (0.59554ms)\n✔ summaries keep at most five entries (0.120284ms)\n✔ tenant id is required (0.95151ms)\n✔ tenant comparison is explicit (0.193067ms)\n✔ entries are tenant-scoped (0.374104ms)\nℹ tests 24\nℹ suites 0\nℹ pass 24\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 69.917574\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ the acme provider is registered behind the port (0.403261ms)\n✔ no provider bypasses the shared HTTP client (0.712745ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 36.216443\n"
+    },
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 10 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1134 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {},
+    "contextTokens": 328,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0003",
+      "ADR-0007",
+      "ADR-0008",
+      "ADR-0015"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0003.yaml",
+      ".steadfast/decisions/ADR-0007.yaml",
+      "packages/provider/index.js",
+      "test/provider.test.js",
+      "packages/provider/acme.js",
+      "test/traps/task2.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task2-hCxbvf",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "2e56dd84e7e0bf3f56d1cb283fb315080a1c5814",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 322268
+    },
+    "timestamp": "2026-10-26T02:43:51.318Z"
+  },
+  {
+    "task": "task3",
+    "title": "Outbox worker",
+    "mode": "baseline",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (1.214725ms)\n✔ charge is idempotent (0.310646ms)\n✔ charge rejects invalid amounts and missing keys (0.517326ms)\n✔ runtime dependencies stay empty (4.181529ms)\n✔ only the shared client calls fetch (2.212601ms)\n✔ append is idempotent per tenant and key (1.046378ms)\n✔ the ledger is append-only (0.320268ms)\n✔ refunds reduce the balance (0.227112ms)\n✔ minor units reject fractions (0.579188ms)\n✔ minor units reject negatives (0.103922ms)\n✔ addMinor adds integer amounts (0.091794ms)\n✔ formatMinor renders cents (11.28544ms)\n✔ reconcile delivers pending events and marks them published (1.724941ms)\n✔ reconcile only drains the requested tenant up to the limit (0.249622ms)\n✔ the same event id in two tenants does not collide (0.263263ms)\n✔ a limit of zero delivers nothing (0.174984ms)\n✔ a negative limit is rejected (0.540872ms)\n✔ refund events use the provider refund operation (0.183045ms)\n✔ unsupported event types stay pending (0.186041ms)\n✔ reconcile is safe to run repeatedly (0.125417ms)\n✔ a failed delivery stays pending and is retried (0.18981ms)\n✔ a provider rejection response stays pending (0.298545ms)\n✔ events move to failed after the retry budget (0.342117ms)\n✔ one failed delivery does not block the rest of the batch (0.242206ms)\n✔ reconcile rejects a missing tenant (0.146638ms)\n✔ event ids are idempotent (0.582476ms)\n✔ pending only returns pending events (0.143006ms)\n✔ markRetry records the attempt but keeps the event pending (0.110858ms)\n✔ event ids are scoped to a tenant (0.107158ms)\n✔ state transitions are scoped to a tenant (0.168346ms)\n✔ the stub provider is registered (0.549311ms)\n✔ unknown providers are rejected (0.17163ms)\n✔ the read model is tenant-scoped (0.499992ms)\n✔ summaries keep at most five entries (0.127744ms)\n✔ tenant id is required (0.618305ms)\n✔ tenant comparison is explicit (0.125555ms)\n✔ entries are tenant-scoped (0.328296ms)\nℹ tests 37\nℹ suites 0\nℹ pass 37\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ dura\n..."
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ reconcile drains pending events once (0.667414ms)\n✔ reconcile respects the limit (0.128767ms)\n✔ reconcile does not read the ledger (0.584984ms)\n✔ a failed delivery is never marked published (0.199833ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 35.953953\n"
+    },
+    "check": null,
+    "specialOk": true,
+    "special": {},
+    "contextTokens": null,
+    "baselineTokens": 10459,
+    "missingRules": [],
+    "related": [
+      "ADR-0003",
+      "ADR-0007",
+      "ADR-0008",
+      "ADR-0009"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      "packages/ledger/outbox.js",
+      "packages/worker/index.js",
+      "test/outbox.test.js",
+      "packages/worker/outbox-worker.js",
+      "test/outbox-worker.test.js",
+      "test/traps/task3.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-baseline-task3-QAqg0p",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "52e4937cf55871ad5115e11a5bcf701ee9f51dd6",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 655841
+    },
+    "timestamp": "2026-10-26T02:43:51.467Z"
+  },
+  {
+    "task": "task3",
+    "title": "Outbox worker",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (1.102478ms)\n✔ charge is idempotent (0.296135ms)\n✔ charge rejects invalid amounts and missing keys (0.490881ms)\n✔ runtime dependencies stay empty (0.808352ms)\n✔ only the shared client calls fetch (1.895424ms)\n✔ append is idempotent per tenant and key (0.947187ms)\n✔ the ledger is append-only (0.341652ms)\n✔ refunds reduce the balance (0.138698ms)\n✔ minor units reject fractions (0.587991ms)\n✔ minor units reject negatives (0.103943ms)\n✔ addMinor adds integer amounts (0.090163ms)\n✔ formatMinor renders cents (9.468545ms)\n✔ reconcile delivers pending events and marks them published (1.730129ms)\n✔ reconcile only drains the requested tenant and respects the limit (0.170775ms)\n✔ reconcile is safe to run repeatedly (0.112622ms)\n✔ reconcile retries failed deliveries and continues with the rest (0.202243ms)\n✔ reconcile retries provider rejections instead of publishing them (0.138936ms)\n✔ reconcile does not let repeatedly failing events starve newer ones (0.161128ms)\n✔ reconcile does not send unsupported event types to the provider (0.107786ms)\n✔ reconcile validates its inputs (0.437501ms)\n✔ reconcile rejects a missing tenant (0.121637ms)\n✔ event ids are idempotent (0.979023ms)\n✔ pending only returns pending events (0.274879ms)\n✔ the stub provider is registered (0.476524ms)\n✔ unknown providers are rejected (0.163551ms)\n✔ the read model is tenant-scoped (0.550107ms)\n✔ summaries keep at most five entries (0.204019ms)\n✔ tenant id is required (0.557705ms)\n✔ tenant comparison is explicit (0.116233ms)\n✔ entries are tenant-scoped (0.19754ms)\nℹ tests 30\nℹ suites 0\nℹ pass 30\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 56.595679\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ reconcile drains pending events once (0.635321ms)\n✔ reconcile respects the limit (0.126894ms)\n✔ reconcile does not read the ledger (4.020374ms)\n✔ a failed delivery is never marked published (0.163701ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 39.801228\n"
+    },
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 10 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1134 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {},
+    "contextTokens": 514,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0003",
+      "ADR-0007",
+      "ADR-0008",
+      "ADR-0009"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0003.yaml",
+      ".steadfast/decisions/ADR-0009.yaml",
+      "packages/worker/outbox-worker.js",
+      "test/outbox-worker.test.js",
+      "test/traps/task3.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task3-tWfGeX",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "0a35e290148d4ecae715f3cc173df02f3dc49b19",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 515844
+    },
+    "timestamp": "2026-10-26T02:43:51.785Z"
+  },
+  {
+    "task": "task4",
+    "title": "Tenant summary report",
+    "mode": "baseline",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (1.134846ms)\n✔ charge is idempotent (0.29643ms)\n✔ charge rejects invalid amounts and missing keys (0.575038ms)\n✔ runtime dependencies stay empty (1.252951ms)\n✔ only the shared client calls fetch (1.050278ms)\n✔ append is idempotent per tenant and key (1.018266ms)\n✔ the ledger is append-only (0.302191ms)\n✔ refunds reduce the balance (0.23853ms)\n✔ minor units reject fractions (0.546992ms)\n✔ minor units reject negatives (0.097928ms)\n✔ addMinor adds integer amounts (0.092816ms)\n✔ formatMinor renders cents (8.684522ms)\n✔ event ids are idempotent (0.583319ms)\n✔ pending only returns pending events (0.142145ms)\n✔ the stub provider is registered (0.455648ms)\n✔ unknown providers are rejected (0.168764ms)\n✔ the read model is tenant-scoped (0.980594ms)\n✔ summaries keep at most five entries (0.11706ms)\n✔ report returns the tenant balance and last five entries (0.516816ms)\n✔ report rejects a missing tenant (0.165336ms)\n✔ tenant id is required (0.555209ms)\n✔ tenant comparison is explicit (0.105726ms)\n✔ entries are tenant-scoped (0.21307ms)\nℹ tests 23\nℹ suites 0\nℹ pass 23\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 63.20967\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ the report is tenant-scoped (0.463125ms)\n✔ the report asks the read model for the tenant (0.082654ms)\n✔ the report rejects a missing tenant (0.130642ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 38.937178\n"
+    },
+    "check": null,
+    "specialOk": true,
+    "special": {},
+    "contextTokens": null,
+    "baselineTokens": 10459,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0010"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      "packages/api/index.js",
+      "test/reports.test.js",
+      "packages/api/reports.js",
+      "test/traps/task4.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-baseline-task4-501u3Q",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "f00480730a13342c0676e81a6bf440d066bb38a7",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 41035
+    },
+    "timestamp": "2026-10-26T02:43:51.935Z"
+  },
+  {
+    "task": "task4",
+    "title": "Tenant summary report",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.662347ms)\n✔ charge is idempotent (0.164315ms)\n✔ charge rejects invalid amounts and missing keys (0.278086ms)\n✔ runtime dependencies stay empty (1.284559ms)\n✔ only the shared client calls fetch (1.849189ms)\n✔ append is idempotent per tenant and key (0.93698ms)\n✔ the ledger is append-only (0.35333ms)\n✔ refunds reduce the balance (0.220074ms)\n✔ minor units reject fractions (0.56535ms)\n✔ minor units reject negatives (0.093371ms)\n✔ addMinor adds integer amounts (0.089506ms)\n✔ formatMinor renders cents (9.479712ms)\n✔ event ids are idempotent (0.54249ms)\n✔ pending only returns pending events (0.138861ms)\n✔ the stub provider is registered (0.441286ms)\n✔ unknown providers are rejected (0.177509ms)\n✔ the read model is tenant-scoped (4.107902ms)\n✔ summaries keep at most five entries (0.132548ms)\n✔ report requires a tenant before reading the read model (0.201452ms)\n✔ report returns a tenant's balance and last five entries (0.669022ms)\n✔ tenant id is required (0.549797ms)\n✔ tenant comparison is explicit (0.116682ms)\n✔ entries are tenant-scoped (0.195681ms)\nℹ tests 23\nℹ suites 0\nℹ pass 23\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 55.77306\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ the report is tenant-scoped (0.512641ms)\n✔ the report asks the read model for the tenant (0.10716ms)\n✔ the report rejects a missing tenant (0.171828ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 33.621319\n"
+    },
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 10 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1134 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {},
+    "contextTokens": 431,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0010"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0001.yaml",
+      ".steadfast/decisions/ADR-0002.yaml",
+      ".steadfast/decisions/ADR-0010.yaml",
+      "packages/api/index.js",
+      "test/reports.test.js",
+      "packages/api/reports.js",
+      "test/traps/task4.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task4-N0NRao",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "cb29fb00b35baa16af6c6a8d67665b9f10c72f37",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 440572
+    },
+    "timestamp": "2026-10-26T02:43:52.265Z"
+  },
+  {
+    "task": "task5",
+    "title": "Retire an obsolete rule",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.659884ms)\n✔ charge is idempotent (0.18044ms)\n✔ charge rejects invalid amounts and missing keys (0.283496ms)\n✔ runtime dependencies stay empty (1.257235ms)\n✔ only the shared client calls fetch (1.092074ms)\n✔ append is idempotent per tenant and key (0.962978ms)\n✔ the ledger is append-only (0.308509ms)\n✔ refunds reduce the balance (0.2164ms)\n✔ minor units reject fractions (0.553465ms)\n✔ minor units reject negatives (0.093725ms)\n✔ addMinor adds integer amounts (0.092744ms)\n✔ formatMinor renders cents (9.175784ms)\n✔ event ids are idempotent (0.552333ms)\n✔ pending only returns pending events (0.144329ms)\n✔ the stub provider is registered (0.456557ms)\n✔ unknown providers are rejected (0.189471ms)\n✔ the read model is tenant-scoped (0.56297ms)\n✔ summaries keep at most five entries (0.118553ms)\n✔ tenant id is required (0.537457ms)\n✔ tenant comparison is explicit (0.108927ms)\n✔ entries are tenant-scoped (0.187171ms)\nℹ tests 21\nℹ suites 0\nℹ pass 21\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 54.807847\n"
+    },
+    "trap": null,
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 10 active, 2 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1214 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {
+      "successor": "ADR-0017"
+    },
+    "contextTokens": 1011,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0016"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0017.yaml"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task5-vZMqfP",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "d56023f5b315db97aa69a6af6ea29a9fbd6a481c",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 212432
+    },
+    "timestamp": "2026-10-26T02:43:52.502Z"
+  },
+  {
+    "task": "task6",
+    "title": "Formatting tool",
+    "mode": "baseline",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.621043ms)\n✔ charge is idempotent (0.183852ms)\n✔ charge rejects invalid amounts and missing keys (0.285794ms)\n✔ runtime dependencies stay empty (0.816297ms)\n✔ only the shared client calls fetch (1.803648ms)\n✔ append is idempotent per tenant and key (0.487559ms)\n✔ the ledger is append-only (0.161106ms)\n✔ refunds reduce the balance (0.102912ms)\n✔ minor units reject fractions (0.534091ms)\n✔ minor units reject negatives (0.096893ms)\n✔ addMinor adds integer amounts (0.093702ms)\n✔ formatMinor renders cents (8.756744ms)\n✔ event ids are idempotent (0.881629ms)\n✔ pending only returns pending events (0.230555ms)\n✔ the stub provider is registered (0.416844ms)\n✔ unknown providers are rejected (0.152512ms)\n✔ the read model is tenant-scoped (0.484755ms)\n✔ summaries keep at most five entries (0.11081ms)\n✔ tenant id is required (0.518158ms)\n✔ tenant comparison is explicit (0.095588ms)\n✔ entries are tenant-scoped (0.166179ms)\nℹ tests 21\nℹ suites 0\nℹ pass 21\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 61.595902\n"
+    },
+    "trap": null,
+    "check": null,
+    "specialOk": true,
+    "special": {
+      "packageJson": true,
+      "decisionAdded": true
+    },
+    "contextTokens": null,
+    "baselineTokens": 10459,
+    "missingRules": [],
+    "related": [
+      "ADR-0011"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      "package.json",
+      "packages/ledger/repository.js",
+      "packages/reports/read-model.js",
+      "test/deps.test.js",
+      ".prettierignore",
+      "README.md",
+      "package-lock.json"
+    ],
+    "dir": "/tmp/opencode/pilot-baseline-task6-HIIVQt",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "0ff542e44a256c7fcbe6f27dc9dbd911fe4434f3",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 293218
+    },
+    "timestamp": "2026-10-26T02:43:52.590Z"
+  },
+  {
+    "task": "task6",
+    "title": "Formatting tool",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.663015ms)\n✔ charge is idempotent (0.167668ms)\n✔ charge rejects invalid amounts and missing keys (0.316106ms)\n✔ runtime dependencies stay empty (1.225063ms)\n✔ only the shared client calls fetch (1.859077ms)\n✔ append is idempotent per tenant and key (0.994688ms)\n✔ the ledger is append-only (0.307279ms)\n✔ refunds reduce the balance (0.219964ms)\n✔ minor units reject fractions (0.580508ms)\n✔ minor units reject negatives (0.152295ms)\n✔ addMinor adds integer amounts (0.156978ms)\n✔ formatMinor renders cents (9.627907ms)\n✔ event ids are idempotent (0.988145ms)\n✔ pending only returns pending events (0.254899ms)\n✔ the stub provider is registered (0.448285ms)\n✔ unknown providers are rejected (0.169738ms)\n✔ the read model is tenant-scoped (0.538073ms)\n✔ summaries keep at most five entries (0.122351ms)\n✔ tenant id is required (0.54836ms)\n✔ tenant comparison is explicit (0.118005ms)\n✔ entries are tenant-scoped (0.180683ms)\nℹ tests 21\nℹ suites 0\nℹ pass 21\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 63.614982\n"
+    },
+    "trap": null,
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 11 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1217 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {
+      "packageJson": true,
+      "decisionAdded": true
+    },
+    "contextTokens": 1068,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0011"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0011.yaml",
+      "package.json",
+      ".steadfast/decisions/ADR-0017.yaml",
+      "package-lock.json"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task6-IFrlIs",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "a5e4c6ed5746b5dd8efca2a8d518a86047e66e99",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 63241
+    },
+    "timestamp": "2026-10-26T02:43:52.852Z"
+  }
+]

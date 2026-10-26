@@ -1,0 +1,7 @@
+version: 1
+budgets:
+  context_tokens: 1800
+  decision_tokens: 180
+  invariants: 25
+  guards: 30
+advisory_ttl_days: 90

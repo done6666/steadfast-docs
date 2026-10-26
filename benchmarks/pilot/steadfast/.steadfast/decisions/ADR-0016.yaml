@@ -1,0 +1,12 @@
+id: ADR-0016
+topic: reconciliation
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/worker/reconcile.js
+decision: The nightly reconciliation job scans the ledger in sequence order.
+why:
+  - It compares the ledger against the provider settlement file.
+verified_by: h1:676fb22af2e4b60b140ff5a18ee3d788dac666b721d78e07d91fe0eb994737f5
+by: agent

@@ -1,0 +1,14 @@
+id: ADR-0003
+topic: http-shared
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/provider/**
+  - packages/worker/**
+decision: All outbound HTTP goes through packages/http/client.js.
+why:
+  - Timeouts and retries drifted; an incident created duplicate provider charges.
+enforced_by: test/http-guard.test.js
+verified_by: h1:47fd406ea9c88c5aa6c9d0facc0832553db4b7fa9e4a663f3fef7dac278251e9
+by: agent

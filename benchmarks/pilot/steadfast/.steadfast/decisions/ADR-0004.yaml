@@ -1,0 +1,16 @@
+id: ADR-0004
+topic: idempotency
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/api/charges.js
+  - packages/api/refunds.js
+  - packages/ledger/repository.js
+
+decision: Charges and refunds require an idempotency key, unique per tenant.
+why:
+  - A retry after a committed write must not create a second charge.
+enforced_by: test/charges.test.js
+verified_by: h1:87d7e2a205a79f78717d3055461b2d2f3182c32aa5bf0b834864112572a06e29
+by: agent

@@ -1,0 +1,11 @@
+id: ADR-0014
+topic: events-direct
+scope: global
+status: rejected
+created: 2026-10-26
+applies_to:
+  - packages/api/**
+decision: Publish events directly from the request handler.
+why:
+  - Lower latency.
+by: agent

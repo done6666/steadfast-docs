@@ -1,0 +1,21 @@
+{
+  "fresh": {
+    "detected": true,
+    "code": null
+  },
+  "staleFingerprint": {
+    "detected": true,
+    "code": "fresh/stale",
+    "healed": false
+  },
+  "duplicateTopic": {
+    "detected": true,
+    "code": "graph/duplicate-topic"
+  },
+  "editedHistory": {
+    "detected": true,
+    "code": "history/edited-record"
+  },
+  "legacyContradictions": 4,
+  "baselineDetector": false
+}

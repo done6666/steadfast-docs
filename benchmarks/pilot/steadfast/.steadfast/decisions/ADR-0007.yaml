@@ -1,0 +1,13 @@
+id: ADR-0007
+topic: provider-port
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/provider/**
+decision: Providers are pluggable behind packages/provider/port.js; adapters do not bypass the HTTP client.
+why:
+  - A provider outage must not require a handler branch.
+enforced_by: test/provider.test.js
+verified_by: h1:6f7a1454a8addcd191a1d7248bf844d9459024fffa277f09435aecb4d97955be
+by: agent

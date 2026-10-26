@@ -1,0 +1,89 @@
+[
+  {
+    "id": "task1",
+    "title": "Refund flow",
+    "prompt": "tasks/task1.md",
+    "kind": "code",
+    "modes": ["baseline", "steadfast"],
+    "context": [
+      "--for", "packages/api/refunds.js",
+      "--for", "packages/api/index.js",
+      "--for", "packages/ledger/repository.js",
+      "--for", "packages/ledger/outbox.js",
+      "--for", "packages/ledger/money.js",
+      "--for", "packages/tenancy/index.js"
+    ],
+    "allowed": ["packages/api/", "packages/ledger/", "packages/tenancy/", "test/", ".steadfast/"],
+    "related": ["ADR-0001", "ADR-0002", "ADR-0004", "ADR-0005", "ADR-0009"],
+    "trap": "task1.test.js"
+  },
+  {
+    "id": "task2",
+    "title": "Second payment provider",
+    "prompt": "tasks/task2.md",
+    "kind": "code",
+    "modes": ["baseline", "steadfast"],
+    "context": [
+      "--for", "packages/provider/acme.js",
+      "--for", "packages/provider/index.js",
+      "--for", "packages/provider/port.js",
+      "--for", "packages/http/client.js"
+    ],
+    "allowed": ["packages/provider/", "packages/http/", "test/", ".steadfast/"],
+    "related": ["ADR-0003", "ADR-0007", "ADR-0008", "ADR-0015"],
+    "trap": "task2.test.js"
+  },
+  {
+    "id": "task3",
+    "title": "Outbox worker",
+    "prompt": "tasks/task3.md",
+    "kind": "code",
+    "modes": ["baseline", "steadfast"],
+    "context": [
+      "--for", "packages/worker/outbox-worker.js",
+      "--for", "packages/worker/index.js",
+      "--for", "packages/ledger/outbox.js",
+      "--for", "packages/provider/index.js"
+    ],
+    "allowed": ["packages/worker/", "packages/ledger/", "packages/provider/", "test/", ".steadfast/"],
+    "related": ["ADR-0003", "ADR-0007", "ADR-0008", "ADR-0009"],
+    "trap": "task3.test.js"
+  },
+  {
+    "id": "task4",
+    "title": "Tenant summary report",
+    "prompt": "tasks/task4.md",
+    "kind": "code",
+    "modes": ["baseline", "steadfast"],
+    "context": [
+      "--for", "packages/api/reports.js",
+      "--for", "packages/reports/read-model.js",
+      "--for", "packages/tenancy/index.js"
+    ],
+    "allowed": ["packages/api/", "packages/reports/", "packages/tenancy/", "test/", ".steadfast/"],
+    "related": ["ADR-0001", "ADR-0002", "ADR-0010"],
+    "trap": "task4.test.js"
+  },
+  {
+    "id": "task5",
+    "title": "Retire an obsolete rule",
+    "prompt": "tasks/task5.md",
+    "kind": "memory",
+    "modes": ["steadfast"],
+    "context": ["--scope", "global"],
+    "allowed": [".steadfast/"],
+    "related": ["ADR-0016"],
+    "trap": null
+  },
+  {
+    "id": "task6",
+    "title": "Formatting tool",
+    "prompt": "tasks/task6.md",
+    "kind": "deps",
+    "modes": ["baseline", "steadfast"],
+    "context": ["--scope", "global"],
+    "allowed": ["package.json", "package-lock.json", ".prettierignore", "README.md", "packages/", "legacy-docs/", "test/", ".steadfast/"],
+    "related": ["ADR-0011"],
+    "trap": null
+  }
+]
