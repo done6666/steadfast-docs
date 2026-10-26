@@ -17,6 +17,7 @@ import { insideRoot } from "./paths.js";
 const IGNORED: RegExp[] = [
   /(^|\/)(node_modules|dist|build|coverage|\.git|\.next|\.cache|\.turbo)\//,
   /(^|\/)\.steadfast\//,
+  /(^|\/)pre-commit\.steadfast-original\//,
 ];
 
 function isIgnored(path: string): boolean {

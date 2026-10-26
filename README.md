@@ -6,7 +6,7 @@ Documentation that only agents read. Humans ask; agents remember; CI enforces.
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-94-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-122-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
@@ -51,14 +51,29 @@ One-time setup. After this, you do not run the loop; the agent does.
 
 ```bash
 npx steadfast-docs init
-npx steadfast-docs skill install --platform opencode   # or --platform claude
+npx steadfast-docs mcp install --platform opencode   # or --platform claude
+npx steadfast-docs hook install
+npx steadfast-docs skill install --platform opencode
 ```
 
-`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. From then on, you talk to the agent:
+`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. `mcp install` gives the agent native tools, `hook install` gates commits, and the skill teaches the loop. From then on, you talk to the agent:
 
 > “Add a refund endpoint.”
 
-The agent plans the paths, runs `context`, reads only the pack, implements, runs the tests, calls `check` and `verify`, and appends a decision when it made a non-obvious choice. You see a short summary and the decisions that need approval — never a document to review.
+The agent plans the paths, calls `context`, reads only the pack, implements, runs the tests, calls `check` and `verify`, and appends a decision when it made a non-obvious choice. You see a short summary and the decisions that need approval — never a document to review.
+
+## Native agent tools
+
+`mcp install` registers a local stdio server with the agent:
+
+| Platform | Config written | Tool prefix |
+| --- | --- | --- |
+| OpenCode | `.opencode/opencode.json` (`mcp.servers.steadfast`) | `steadfast_*` |
+| Claude Code | `.mcp.json` (`mcpServers.steadfast`) | `mcp__steadfast__*` |
+
+The server exposes `context`, `check`, `verify`, `new`, `explain`, `supersede` and `doctor`. It is a JSON-RPC wrapper over the same CLI, so there is one implementation and two entry points. `--print` shows the config without writing it; `--check` verifies an existing install.
+
+`hook install` adds a managed block to the real git hooks directory (respecting a repo-local `core.hooksPath`, worktrees and submodules) that runs `check --strict --staged --diff HEAD`. `--staged` refuses to validate a working tree that differs from the index, so what the hook approves is what the commit contains. An existing hook is chained as `pre-commit.steadfast-original` (non-shell hooks included), runs before the check, and is restored by `hook remove`. A hooks directory shared outside the repository is refused, because a project-specific hook would run in every repo. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
 
 ## What a decision looks like
 
@@ -88,6 +103,7 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 - **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. A pack that cannot fit fails closed.
 - **Negative memory.** Rejected proposals are first-class records, so the agent does not re-litigate dead ends.
 - **Retired docs stay retired.** `retire` deletes the old documentation and records the glob; `check` fails if it reappears. Git history is the archive.
+- **Agent-native.** The MCP server and CLI share one contract; the pre-commit hook enforces `check` even when the agent forgets.
 - **Decision debt.** `check --diff main` flags dependency and build changes that arrived without a decision.
 
 ## Commands
@@ -98,8 +114,13 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 | `npx steadfast-docs context --for <paths>` | Compile the token-budgeted pack for a task |
 | `npx steadfast-docs check --strict --diff main` | Validate schema, graph, freshness, paths, budgets and history |
 | `npx steadfast-docs new ...` | Append a decision record |
+| `npx steadfast-docs explain <id>` | Inspect one record, its status and successor |
+| `npx steadfast-docs supersede <id> --decision <text>` | Append a successor; the old record is derived as superseded |
 | `npx steadfast-docs verify <ids> --assume` | Recompute fingerprints after the tests pass |
 | `npx steadfast-docs retire <path> --apply` | Delete legacy docs and enforce `retired_docs` |
+| `npx steadfast-docs mcp install` | Register the MCP server (or run `mcp` to start it) |
+| `npx steadfast-docs hook install` | Add the managed pre-commit `check` |
+| `npx steadfast-docs doctor` | Diagnose contract, skill, MCP, hook, freshness and advisories |
 | `npx steadfast-docs skill install --platform opencode` | Install the agent loop (or `claude`) |
 
 ## Evidence
@@ -137,13 +158,13 @@ npx steadfast-docs retire legacy-docs --apply
 
 **Do I have to run the commands?** No. `init` and `skill install` are one-time; after that the agent runs the loop. `check` in CI is the gate.
 
-**Does it work with Claude Code, Codex, Cursor?** `AGENTS.md` is the contract; the skill installs for OpenCode or Claude. Any harness that can run shell commands can use the CLI.
+**Does it work with Claude Code, Codex, Cursor?** `mcp install` supports OpenCode and Claude Code; the skill installs for both. Any harness that can run shell commands can use the CLI, and `AGENTS.md` is the contract.
 
-**What happens when a decision changes?** Append a new record with `--supersedes`; never edit the old one. `check --diff main` rejects edits, deletions and renames.
+**What happens when a decision changes?** Run `steadfast supersede <id> --decision "<rule>"`; it inherits enforcement and guards, and the old record resolves to superseded. Never edit an active record. `check --diff main` rejects edits, deletions and renames.
 
 **What if the agent ignores the contract?** The commit or PR fails `check --strict`; the memory is enforced, not advisory.
 
-**Is 0.1.0 production-ready?** The protocol and CLI are covered by 94 tests, but the pilot is synthetic. Start with a non-critical repo.
+**Is it production-ready?** The protocol and CLI are covered by 122 tests, but the pilot is synthetic. Start with a non-critical repo.
 
 ## Development
 
@@ -160,8 +181,8 @@ node dist/src/cli.js check --strict
 
 ## Status
 
-0.1.0 published. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`, `retire`, `skill`.
-Next: an MCP server for native tool calls and a real-project pilot.
+0.2.0 published. The agent-native slice is complete: `init`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
+Next: task-scope contracts (`start` / `check` / `end`) and a real-project pilot.
 
 ## License
 

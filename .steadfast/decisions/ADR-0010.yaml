@@ -1,0 +1,15 @@
+id: ADR-0010
+topic: pre-commit
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - src/commands/hook.ts
+  - src/commands/check.ts
+  - test/hook.test.ts
+decision: The pre-commit hook validates the index, and refuses when governed files in the working tree differ from the staged commit.
+why:
+  - A hook that reads only the working tree can approve a different commit.
+enforced_by: test/hook.test.ts
+verified_by: h1:bf5f2c00fa21160ace54bb7faef74b1cb73074e94b19e6ae40b0ee92ac2b340b
+by: agent

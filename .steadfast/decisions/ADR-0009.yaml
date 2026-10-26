@@ -1,0 +1,17 @@
+id: ADR-0009
+topic: agent-interface
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - src/mcp/**
+  - src/commands/mcp.ts
+  - src/run.ts
+  - test/mcp.test.ts
+  - test/mcp-install.test.ts
+decision: The MCP server wraps the CLI, so every command has one implementation and the agent surface cannot drift from the terminal surface.
+why:
+  - A second implementation would drift and double the test burden.
+enforced_by: test/mcp.test.ts
+verified_by: h1:db353ef8208eecaeafe175eec8baed481b876d92cbc5b4821bb1b28ea13d6798
+by: agent

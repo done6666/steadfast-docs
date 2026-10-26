@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { toPosix, uniq } from "../util.js";
 
 export interface Change {
@@ -27,6 +27,25 @@ export function tryGit(root: string, args: string[]): string | undefined {
 
 export function gitRoot(start: string): string | undefined {
   return tryGit(start, ["rev-parse", "--show-toplevel"]);
+}
+
+/**
+ * Resolves a git-internal path such as `hooks/pre-commit`. Respects
+ * `core.hooksPath`, linked worktrees and submodules; the result may be
+ * relative to `root`.
+ */
+export function gitPath(root: string, path: string): string | undefined {
+  const top = gitRoot(root);
+  if (top === undefined) return undefined;
+  const value = tryGit(top, ["rev-parse", "--git-path", path]);
+  return value === undefined || value.length === 0 ? undefined : resolve(top, value);
+}
+
+export function gitCommonDir(root: string): string | undefined {
+  const top = gitRoot(root);
+  if (top === undefined) return undefined;
+  const value = tryGit(top, ["rev-parse", "--git-common-dir"]);
+  return value === undefined || value.length === 0 ? undefined : resolve(top, value);
 }
 
 export function isValidRef(root: string, ref: string): boolean {
@@ -118,6 +137,56 @@ export function changedFiles(root: string, ref: string): string[] {
       ...(entry.from === undefined ? [] : [entry.from]),
     ]),
   ).sort();
+}
+
+/**
+ * Files whose working-tree content differs from the index. `check --staged`
+ * uses this to ensure a pre-commit run validates what will actually commit.
+ */
+export function unstagedFiles(root: string): string[] {
+  const top = gitRoot(root);
+  if (top === undefined) return [];
+
+  const pathArg = pathArgFor(top, root);
+  const output = execFileSync(
+    "git",
+    ["diff", "--name-only", "-z", "--no-renames", "--", pathArg],
+    {
+      cwd: top,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: 32 * 1024 * 1024,
+    },
+  );
+
+  return output
+    .split("\0")
+    .filter((path) => path.length > 0)
+    .map((path) => toRootRelative(top, root, path))
+    .filter((path): path is string => path !== undefined);
+}
+
+export function untrackedFiles(root: string): string[] {
+  const top = gitRoot(root);
+  if (top === undefined) return [];
+
+  const pathArg = pathArgFor(top, root);
+  const output = execFileSync(
+    "git",
+    ["ls-files", "--others", "--exclude-standard", "-z", "--", pathArg],
+    {
+      cwd: top,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: 32 * 1024 * 1024,
+    },
+  );
+
+  return output
+    .split("\0")
+    .filter((path) => path.length > 0)
+    .map((path) => toRootRelative(top, root, path))
+    .filter((path): path is string => path !== undefined);
 }
 
 export function headSha(root: string): string | undefined {

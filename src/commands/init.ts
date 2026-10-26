@@ -12,12 +12,12 @@ const END = "<!-- steadfast:end -->";
 const AGENTS_BLOCK = `${BEGIN}
 ## Project memory
 
-Before editing, run \`npx steadfast-docs context --for <paths>\` and use only that output for context.
+If the steadfast MCP server is connected, call \`steadfast_context\` (OpenCode) or \`mcp__steadfast__context\` (Claude) with the paths you will touch; otherwise run \`npx steadfast-docs context --for <paths>\`. Use only that output for context.
 Records are not reading material: do not load other records, legacy docs or architecture notes. The pack is the only context.
-After \`steadfast new\`, fill the record you just created. Never edit an active record; supersede it.
+After a new record, fill the record you just created. Never edit an active record; supersede it.
 
-Before committing, run \`npx steadfast-docs check\`.
-Optional: install the full loop with \`npx steadfast-docs skill install --platform opencode\` (or \`--platform claude\`).
+Before committing, call the steadfast \`check\` tool, or run \`npx steadfast-docs check\`.
+Optional: install the agent wiring with \`npx steadfast-docs mcp install\`, \`npx steadfast-docs hook install\`, and \`npx steadfast-docs skill install --platform opencode\`.
 ${END}
 `;
 

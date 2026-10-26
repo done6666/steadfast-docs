@@ -10,10 +10,14 @@ description: Use when a repository has .steadfast/ or AGENTS.md mentions steadfa
 Use this skill when `.steadfast/` exists or `AGENTS.md` mentions steadfast.
 It does not replace the task; it constrains how you read, change and record.
 
+With MCP connected, call its `context`, `check`, `verify`, `new` and `supersede`
+tools instead of the CLI below; clients prefix the names (`steadfast_*` in
+OpenCode, `mcp__steadfast__*` in Claude).
+
 ## 1. Plan the path set
 
 Before editing, list every file or directory the task will touch.
-If you cannot yet, list the first three and expand the set as you learn.
+If you cannot yet, start with three paths and expand as you learn.
 
 ## 2. Load only the pack
 
@@ -21,12 +25,10 @@ Run:
 
     npx steadfast-docs context --for <path[,path]>
 
-If `AGENTS.md` names a different invocation, use that one.
-
 Read the output. Do not open `.steadfast/decisions/`, superseded or retired
 records. Do not read other documentation, ADRs, architecture notes or READMEs.
-They are the drift this system replaces. The pack is the complete context you
-may use **only when its header says `omitted: 0`**.
+They are the drift this replaces; the pack is complete only when its header
+says `omitted: 0`.
 
 When the path set grows, run the command again with the full set.
 If the header shows `omitted` above zero, the pack is incomplete: narrow the
@@ -48,8 +50,8 @@ impossible, stop and propose a superseding decision. Never route around a guard.
 
 ## 4. Edit
 
-Keep changes inside the path set. If a file outside it becomes necessary, stop
-and expand the plan first.
+Keep changes inside the path set; if a file outside it is needed, stop and
+expand the plan.
 
 Never edit a decision that is already in force. A draft you created in this
 task may be filled until it becomes active.
@@ -95,7 +97,7 @@ Then set `status: active` and run `verify`.
 - One rule per record. No history, background or alternatives essay.
 - Put rejected alternatives in `rejected`, one line each.
 - Prefer a guard (`deny`, `instead`, `check`) over prose.
-- If a rule changes, append a new record with `--supersedes <id>`.
+- If a rule changes, run `steadfast supersede <id> --decision "<rule>"`.
 - If the choice is not enforceable, leave it advisory; it will expire.
 
 ## 7. Hand off
@@ -110,9 +112,8 @@ Do not summarize the documentation. Do not ask the human to read a record.
 
 ## Optional critic
 
-If subagents are available, give a fresh agent only the new decision diff and
-ask it to find contradictions, restated code and unverifiable claims. Apply
-its cuts.
+If subagents exist, give a fresh agent only the decision diff; ask it to cut
+contradictions, restated code and unverifiable claims.
 
 ## Stop conditions
 

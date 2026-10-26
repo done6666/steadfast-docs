@@ -21,11 +21,15 @@ export interface CliResult {
   stderr: string;
 }
 
-export function cli(args: string[], cwd: string): CliResult {
+export function cli(
+  args: string[],
+  cwd: string,
+  extraEnv: NodeJS.ProcessEnv = {},
+): CliResult {
   const result = spawnSync(process.execPath, [CLI, ...args], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1" },
+    env: { ...process.env, NO_COLOR: "1", ...extraEnv },
   });
   return {
     status: result.status ?? -1,

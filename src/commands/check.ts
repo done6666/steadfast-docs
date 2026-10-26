@@ -2,8 +2,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import { parse } from "yaml";
-import { FileIndex } from "../core/fingerprint.js";
-import { changedEntries, fileAtRef, gitRoot, isValidRef } from "../core/git.js";
+import { FileIndex, listRepoFiles } from "../core/fingerprint.js";
+import {
+  changedEntries,
+  fileAtRef,
+  gitRoot,
+  isValidRef,
+  unstagedFiles,
+  untrackedFiles,
+} from "../core/git.js";
+import { matchesAny } from "../core/glob.js";
 import type { Change } from "../core/git.js";
 import { buildGraph } from "../core/graph.js";
 import { safeFile } from "../core/paths.js";
@@ -64,6 +72,7 @@ export async function checkCommand(argv: string[]): Promise<number> {
       diff: { type: "string" },
       strict: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
+      staged: { type: "boolean", default: false },
       "no-freshness": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -72,11 +81,12 @@ export async function checkCommand(argv: string[]): Promise<number> {
   });
 
   if (values.help) {
-    write("steadfast check [--diff <ref>] [--strict] [--json] [--no-freshness]");
+    write("steadfast check [--diff <ref>] [--strict] [--json] [--staged] [--no-freshness]");
     write("");
     write("  Validates schema, the supersede graph, freshness, paths and budgets.");
     write("  Exit 1 on error. --strict promotes warnings to failures.");
-    write("  --diff  also enforce append-only history and flag undocumented decisions");
+    write("  --diff   also enforce append-only history and flag undocumented decisions");
+    write("  --staged require governed files to match the index (for pre-commit)");
     return 0;
   }
 
@@ -105,6 +115,69 @@ export async function checkCommand(argv: string[]): Promise<number> {
   }
 
   const isActive = (decision: Decision): boolean => graph.resolved.get(decision.id) === "active";
+
+  if (values.staged) {
+    if (gitRoot(root) === undefined) {
+      issues.push({
+        severity: "error",
+        code: "git/unavailable",
+        message: "--staged requires a git work tree",
+      });
+    } else {
+      const governed = [
+        ...loaded.decisions.filter(isActive).flatMap((decision) => decision.applies_to),
+        ...loaded.invariants.flatMap((invariant) => invariant.applies_to ?? []),
+      ];
+      const watched = new Set(
+        governed.length === 0
+          ? []
+          : listRepoFiles(root).filter((path) => matchesAny(path, governed)),
+      );
+      for (const decision of loaded.decisions) {
+        if (!isActive(decision)) continue;
+        if (decision.enforced_by !== undefined && !decision.enforced_by.startsWith("!")) {
+          watched.add(decision.enforced_by);
+        }
+      }
+      for (const invariant of loaded.invariants) {
+        if (invariant.enforced_by !== undefined && !invariant.enforced_by.startsWith("!")) {
+          watched.add(invariant.enforced_by);
+        }
+      }
+      for (const target of installedSkillTargets(root)) {
+        watched.add(relative(root, target.path).replace(/\\/g, "/"));
+      }
+
+      let changed: string[] = [];
+      try {
+        changed = [...unstagedFiles(root), ...untrackedFiles(root)];
+      } catch (error) {
+        issues.push({
+          severity: "error",
+          code: "git/diff",
+          message: `cannot compare the index with the working tree: ${(error as Error).message}`,
+        });
+      }
+
+      const conflicts = [...new Set(changed)].filter(
+        (path) =>
+          path.startsWith(".steadfast/") ||
+          path.startsWith(".opencode/skills/") ||
+          path.startsWith(".claude/skills/") ||
+          watched.has(path),
+      );
+      if (conflicts.length > 0) {
+        issues.push({
+          severity: "error",
+          code: "git/unstaged",
+          message: `working tree and index disagree for ${conflicts
+            .slice(0, 3)
+            .join(", ")}${conflicts.length > 3 ? ` +${conflicts.length - 3}` : ""}`,
+          fix: "stage the intended content (git add) and commit again; verify updates the working tree, not the index",
+        });
+      }
+    }
+  }
 
   for (const decision of loaded.decisions) {
     const file = loaded.files.get(decision.id);
