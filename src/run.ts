@@ -1,0 +1,53 @@
+import { checkCommand } from "./commands/check.js";
+import { contextCommand } from "./commands/context.js";
+import { initCommand } from "./commands/init.js";
+import { newCommand } from "./commands/new.js";
+import { verifyCommand } from "./commands/verify.js";
+import { paint, write, writeError } from "./output.js";
+import { VERSION } from "./version.js";
+
+function printHelp(): void {
+  write(`${paint.bold("steadfast")} ${VERSION} - normative project memory for coding agents`);
+  write("");
+  write("Usage: steadfast <command> [options]");
+  write("");
+  write("  init       scaffold .steadfast/ and the AGENTS.md contract");
+  write("  context    compile a token-budgeted memory pack for paths or a scope");
+  write("  check      validate the memory graph, freshness, paths and budgets");
+  write("  new        append a decision record");
+  write("  verify     recompute freshness fingerprints");
+  write("  version    print the version");
+  write("");
+  write("Run `steadfast <command> --help` for command options.");
+}
+
+export async function run(argv: string[]): Promise<number> {
+  const [command, ...rest] = argv;
+
+  if (command === undefined || command === "help" || command === "--help" || command === "-h") {
+    printHelp();
+    return 0;
+  }
+
+  switch (command) {
+    case "init":
+      return initCommand(rest);
+    case "new":
+      return newCommand(rest);
+    case "context":
+      return contextCommand(rest);
+    case "check":
+      return checkCommand(rest);
+    case "verify":
+      return verifyCommand(rest);
+    case "version":
+    case "--version":
+    case "-v":
+      write(VERSION);
+      return 0;
+    default:
+      writeError(`error: unknown command "${command}"`);
+      printHelp();
+      return 2;
+  }
+}
