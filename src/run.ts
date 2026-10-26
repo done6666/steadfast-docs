@@ -2,6 +2,7 @@ import { checkCommand } from "./commands/check.js";
 import { contextCommand } from "./commands/context.js";
 import { initCommand } from "./commands/init.js";
 import { newCommand } from "./commands/new.js";
+import { retireCommand } from "./commands/retire.js";
 import { skillCommand } from "./commands/skill.js";
 import { verifyCommand } from "./commands/verify.js";
 import { paint, write, writeError } from "./output.js";
@@ -17,6 +18,7 @@ function printHelp(): void {
   write("  check      validate the memory graph, freshness, paths and budgets");
   write("  new        append a decision record");
   write("  verify     recompute freshness fingerprints");
+  write("  retire     delete legacy docs and record them as retired");
   write("  skill      install the canonical agent loop");
   write("  version    print the version");
   write("");
@@ -42,6 +44,8 @@ export async function run(argv: string[]): Promise<number> {
       return checkCommand(rest);
     case "verify":
       return verifyCommand(rest);
+    case "retire":
+      return retireCommand(rest);
     case "skill":
       return skillCommand(rest);
     case "version":

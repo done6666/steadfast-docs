@@ -42,6 +42,7 @@ export interface Config {
   version: 1;
   budgets: Budgets;
   advisory_ttl_days: number;
+  retired_docs: string[];
 }
 
 export type Severity = "error" | "warning";

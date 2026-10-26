@@ -20,7 +20,7 @@ export const DECISION_FIELDS = [
 
 export const GUARD_FIELDS = ["deny", "instead", "check"] as const;
 export const INVARIANT_FIELDS = ["id", "rule", "applies_to", "enforced_by"] as const;
-export const CONFIG_FIELDS = ["version", "budgets", "advisory_ttl_days"] as const;
+export const CONFIG_FIELDS = ["version", "budgets", "advisory_ttl_days", "retired_docs"] as const;
 export const CONFIG_BUDGET_FIELDS = [
   "context_tokens",
   "decision_tokens",
@@ -59,6 +59,7 @@ export const DEFAULT_CONFIG: Config = {
     guards: 30,
   },
   advisory_ttl_days: 90,
+  retired_docs: [],
 };
 
 function issue(
@@ -541,6 +542,7 @@ export function validateConfig(raw: unknown, file: string): { value: Config; iss
     version: 1,
     budgets: { ...DEFAULT_CONFIG.budgets },
     advisory_ttl_days: DEFAULT_CONFIG.advisory_ttl_days,
+    retired_docs: [],
   };
 
   if (raw.budgets !== undefined) {
@@ -583,6 +585,33 @@ export function validateConfig(raw: unknown, file: string): { value: Config; iss
       );
     } else {
       value.advisory_ttl_days = entry;
+    }
+  }
+
+  if (raw.retired_docs !== undefined) {
+    if (!Array.isArray(raw.retired_docs)) {
+      error(issues, "schema/type", `"retired_docs" must be a list`, file);
+    } else if (raw.retired_docs.length > 100) {
+      error(issues, "budget/list-length", `"retired_docs" has more than 100 entries`, file);
+    } else {
+      const retired: string[] = [];
+      for (const entry of raw.retired_docs) {
+        if (typeof entry !== "string" || entry.length === 0 || entry.length > 200) {
+          error(issues, "schema/type", `"retired_docs" entries must be non-empty strings`, file);
+          continue;
+        }
+        if (entry.startsWith("/") || entry.includes("..")) {
+          error(
+            issues,
+            "schema/glob",
+            `"${entry}" must be repo-relative and must not contain ".."`,
+            file,
+          );
+          continue;
+        }
+        retired.push(entry);
+      }
+      value.retired_docs = retired;
     }
   }
 

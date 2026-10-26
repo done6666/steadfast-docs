@@ -32,6 +32,8 @@ When the path set grows, run the command again with the full set.
 If the header shows `omitted` above zero, the pack is incomplete: narrow the
 path set and re-run, or stop and report. Never edit on a partial pack.
 If the pack reports `over-budget`, stop; never guess missing rules.
+If legacy documentation still exists in the working tree, stop and ask the
+human to retire it with `steadfast retire <path> --apply`.
 
 ## 3. Restate the constraints
 

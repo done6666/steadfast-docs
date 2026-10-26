@@ -91,6 +91,19 @@ export async function checkCommand(argv: string[]): Promise<number> {
   const issues: Issue[] = [...loaded.issues, ...graph.issues];
   const index = new FileIndex(root);
 
+  for (const glob of loaded.config.retired_docs) {
+    const matches = index.matching([glob]);
+    if (matches.length === 0) continue;
+    issues.push({
+      severity: "error",
+      code: "docs/retired-present",
+      message: `retired documentation is back: ${matches
+        .slice(0, 3)
+        .join(", ")}${matches.length > 3 ? ` +${matches.length - 3}` : ""}`,
+      fix: "delete it; git history is the archive",
+    });
+  }
+
   const isActive = (decision: Decision): boolean => graph.resolved.get(decision.id) === "active";
 
   for (const decision of loaded.decisions) {

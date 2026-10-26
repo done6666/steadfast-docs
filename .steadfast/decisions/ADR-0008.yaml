@@ -1,0 +1,15 @@
+id: ADR-0008
+topic: docs-retirement
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - src/commands/retire.ts
+  - src/commands/check.ts
+  - schema/config.schema.json
+decision: Legacy documentation is deleted after migration; check fails if a retired glob reappears.
+why:
+  - The pack is the only context; stale docs are the drift this replaces.
+enforced_by: test/retire.test.ts
+verified_by: h1:6a9e432ed291641952e3f4e673885b00044d7e6a9e6aa9ab4675d1b873532cab
+by: agent

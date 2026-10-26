@@ -122,6 +122,11 @@ test("config bounds match the published schema", () => {
   assert.ok(codes(ttl.issues).includes("budget/range"));
 });
 
+test("retired_docs must stay inside the repository", () => {
+  const result = validateConfig({ version: 1, retired_docs: ["../legacy-docs"] }, "config.yaml");
+  assert.ok(codes(result.issues).includes("schema/glob"));
+});
+
 test("impossible calendar dates are rejected", () => {
   const result = validateDecision(active({ created: "2026-02-31" }), "ADR-0001.yaml");
   assert.ok(codes(result.issues).includes("schema/date"));

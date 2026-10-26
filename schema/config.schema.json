@@ -17,6 +17,11 @@
         "guards": { "type": "integer", "minimum": 1, "maximum": 100 }
       }
     },
-    "advisory_ttl_days": { "type": "integer", "minimum": 1, "maximum": 3650 }
+    "advisory_ttl_days": { "type": "integer", "minimum": 1, "maximum": 3650 },
+    "retired_docs": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    }
   }
 }

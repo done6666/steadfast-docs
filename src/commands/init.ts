@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
@@ -105,18 +105,25 @@ function scan(root: string): Record<string, unknown> {
     existsSync(join(root, name)),
   );
 
+  const docs = ["docs", "doc", "legacy-docs", "adr", "documentation"].filter((name) => {
+    const path = join(root, name);
+    return existsSync(path) && statSync(path).isDirectory();
+  });
+
   return {
     root,
     stacks: [...stacks].sort(),
     manifests: manifests.sort(),
     scopes: [...scopes].sort(),
     tests,
+    docs,
     budgets: DEFAULT_CONFIG.budgets,
     next: [
       "Write 8-25 invariants to .steadfast/invariants.yaml. One sentence each; if it needs a paragraph it is a decision.",
       "Append one decision per non-obvious choice. Give each an enforced_by test or command.",
       "Rules without enforced_by are advisory and expire.",
       "Run: steadfast check --strict",
+      "After seeding, retire legacy docs: steadfast retire <dir> --apply",
     ],
   };
 }
