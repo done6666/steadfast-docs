@@ -125,12 +125,16 @@ export function buildPack(
       decision.why && decision.why.length > 0
         ? `\n    why: ${JSON.stringify(decision.why)}`
         : "";
+    const rejected =
+      decision.rejected && decision.rejected.length > 0
+        ? `\n    rejected: ${JSON.stringify(decision.rejected)}`
+        : "";
     items.push({
       kind: "decision",
       priority: PRIORITY.decision,
       rank,
       id: decision.id,
-      text: `  - id: ${decision.id}\n    scope: ${decision.scope}\n    rule: ${quote(decision.decision)}${why}`,
+      text: `  - id: ${decision.id}\n    scope: ${decision.scope}\n    rule: ${quote(decision.decision)}${why}${rejected}`,
     });
 
     for (const guard of decision.guards ?? []) {

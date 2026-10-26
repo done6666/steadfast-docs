@@ -97,6 +97,21 @@ test("executable checks are rendered without the ! prefix", () => {
   assert.doesNotMatch(pack.text, /"!npm test"/);
 });
 
+test("active decisions keep their rejected alternatives", () => {
+  const withRejected = decision("ADR-0001", {
+    rejected: ["Direct fetch: retries drift per call site."],
+  });
+  const localResolved = new Map<string, ResolvedStatus>([["ADR-0001", "active"]]);
+
+  const pack = buildPack([withRejected], [], localResolved, {
+    paths: ["src/billing/charge.ts"],
+    budget: 1500,
+    maxGuards: 30,
+  });
+
+  assert.match(pack.text, /rejected: \["Direct fetch: retries drift per call site\."\]/);
+});
+
 test("rejected proposals are surfaced as do-not-revisit", () => {
   const pack = buildPack(decisions, invariants, resolved, {
     paths: ["src/billing/charge.ts"],
