@@ -2,5 +2,7 @@ node_modules/
 dist/
 coverage/
 .steadfast/tasks/
+.steadfast/decisions/.lock/
+.steadfast/decisions/*.tmp
 *.tgz
 .DS_Store
