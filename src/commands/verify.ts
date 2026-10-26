@@ -19,6 +19,7 @@ export async function verifyCommand(argv: string[]): Promise<number> {
       run: { type: "string" },
       assume: { type: "boolean", default: false },
       trust: { type: "boolean", default: false },
+      all: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
     allowPositionals: true,
@@ -26,18 +27,27 @@ export async function verifyCommand(argv: string[]): Promise<number> {
   });
 
   if (values.help) {
-    write("steadfast verify <id...> [--run <command>] [--assume] [--trust]");
+    write("steadfast verify <id...> | --all [--run <command>] [--assume] [--trust]");
     write("");
     write("  Recomputes the content fingerprint of each record's applies_to files.");
     write("  Records with enforced_by \"!cmd\" are executable code and require --trust.");
-    write("  --run \"<command>\"      run one command for all listed records");
+    write("  --all                 verify every active record");
+    write("  --run \"<command>\"      run one command for explicit ids (not --all)");
     write("  --assume              assert that path-only/advisory checks already passed");
     return 0;
   }
 
-  const ids = positionals;
-  if (ids.length === 0) {
-    writeError("error: pass at least one decision id");
+  const requested = positionals;
+  if (values.all && requested.length > 0) {
+    writeError("error: use either explicit ids or --all, not both");
+    return 2;
+  }
+  if (!values.all && requested.length === 0) {
+    writeError("error: pass at least one decision id, or --all");
+    return 2;
+  }
+  if (values.all && values.run !== undefined) {
+    writeError("error: --run needs explicit ids; --all would stamp records the command does not cover");
     return 2;
   }
 
@@ -50,6 +60,18 @@ export async function verifyCommand(argv: string[]): Promise<number> {
   const loaded = loadProject(root);
   const graph = buildGraph(loaded.decisions, loaded.files);
   const byId = new Map(loaded.decisions.map((decision) => [decision.id, decision]));
+
+  const ids = values.all
+    ? loaded.decisions
+        .filter((decision) => graph.resolved.get(decision.id) === "active")
+        .map((decision) => decision.id)
+    : requested;
+
+  if (ids.length === 0) {
+    writeError("error: no active records to verify");
+    return 2;
+  }
+
   const missing = ids.filter((id) => !byId.has(id));
   if (missing.length > 0) {
     writeError(`error: unknown record(s): ${missing.join(", ")}`);
