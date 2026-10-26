@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { CLI, cli, tempDir, write } from "./helpers.js";
@@ -94,6 +102,18 @@ test("hook refuses a hooks directory shared outside the repository", () => {
   const root = project();
   const outside = join(tempDir(), "hooks");
   git(root, ["config", "core.hooksPath", outside]);
+
+  const refused = cli(["hook", "install"], root);
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /shared outside this repository/);
+  assert.equal(existsSync(join(outside, "pre-commit")), false);
+});
+
+test("hook refuses a hooks directory symlinked outside the repository", () => {
+  const root = project();
+  const outside = tempDir();
+  symlinkSync(outside, join(root, ".githooks"));
+  git(root, ["config", "core.hooksPath", ".githooks"]);
 
   const refused = cli(["hook", "install"], root);
   assert.equal(refused.status, 2);

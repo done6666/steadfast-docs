@@ -6,7 +6,7 @@ Documentation that only agents read. Humans ask; agents remember; CI enforces.
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-122-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-123-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
@@ -164,7 +164,7 @@ npx steadfast-docs retire legacy-docs --apply
 
 **What if the agent ignores the contract?** The commit or PR fails `check --strict`; the memory is enforced, not advisory.
 
-**Is it production-ready?** The protocol and CLI are covered by 122 tests, but the pilot is synthetic. Start with a non-critical repo.
+**Is it production-ready?** The protocol and CLI are covered by 123 tests, but the pilot is synthetic. Start with a non-critical repo.
 
 ## Development
 

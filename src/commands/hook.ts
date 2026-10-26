@@ -3,11 +3,12 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import { gitCommonDir, gitPath, gitRoot } from "../core/git.js";
 import { relativeInside } from "../core/paths.js";
@@ -26,6 +27,22 @@ export function hookPathFor(root: string): string | undefined {
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function realPath(path: string): string | undefined {
+  let current = path;
+  const suffix: string[] = [];
+  while (!existsSync(current)) {
+    const parent = dirname(current);
+    if (parent === current) return undefined;
+    suffix.unshift(basename(current));
+    current = parent;
+  }
+  try {
+    return join(realpathSync(current), ...suffix);
+  } catch {
+    return undefined;
+  }
 }
 
 function hookBlock(root: string, git: string, hookPath: string): string {
@@ -193,8 +210,23 @@ export async function hookCommand(argv: string[]): Promise<number> {
   }
 
   const common = gitCommonDir(root);
-  const local = relativeInside(git, hookPath) !== undefined;
-  const inCommon = common !== undefined && relativeInside(common, hookPath) !== undefined;
+  const realHook = realPath(hookPath);
+  let gitReal: string | undefined;
+  let commonReal: string | undefined;
+  try {
+    gitReal = realpathSync(git);
+    commonReal = common === undefined ? undefined : realpathSync(common);
+  } catch {
+    gitReal = undefined;
+  }
+  const local =
+    realHook !== undefined &&
+    gitReal !== undefined &&
+    relativeInside(gitReal, realHook) !== undefined;
+  const inCommon =
+    realHook !== undefined &&
+    commonReal !== undefined &&
+    relativeInside(commonReal, realHook) !== undefined;
   if (!local && !inCommon) {
     writeError(
       `error: the git hooks directory is shared outside this repository: ${hookPath}`,
