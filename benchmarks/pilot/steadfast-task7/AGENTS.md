@@ -1,0 +1,10 @@
+<!-- steadfast:begin -->
+## Project memory
+
+Before editing, run `npx steadfast-docs context --for <paths>` and use only that output for context.
+Records are not reading material: do not load other records, legacy docs or architecture notes. The pack is the only context.
+After `steadfast new`, fill the record you just created. Never edit an active record; supersede it.
+
+Before committing, run `npx steadfast-docs check`.
+Optional: install the full loop with `npx steadfast-docs skill install --platform opencode` (or `--platform claude`).
+<!-- steadfast:end -->

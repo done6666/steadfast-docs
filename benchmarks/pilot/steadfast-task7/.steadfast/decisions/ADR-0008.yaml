@@ -1,0 +1,11 @@
+id: ADR-0008
+topic: provider-single
+scope: global
+status: rejected
+created: 2026-10-26
+applies_to:
+  - packages/provider/**
+decision: The provider registry contains exactly one production provider.
+why:
+  - One settlement file and one reconciliation path.
+by: agent

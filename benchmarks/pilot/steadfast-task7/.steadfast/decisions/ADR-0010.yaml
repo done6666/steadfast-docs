@@ -1,0 +1,15 @@
+id: ADR-0010
+topic: reports-read-model
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/reports/**
+  - packages/api/reports.js
+
+decision: Customer reports read a tenant-scoped read model; cross-tenant aggregates use a separate admin path.
+why:
+  - The dashboard must never read another tenant's rows.
+enforced_by: test/reports.test.js
+verified_by: h1:188e74e2959801124e4b566b8ae43951f7dad0ca5564112b35478dd9ad179c15
+by: agent

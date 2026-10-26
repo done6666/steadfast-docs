@@ -1,0 +1,11 @@
+id: ADR-0013
+topic: tenancy-silo
+scope: global
+status: rejected
+created: 2026-10-26
+applies_to:
+  - packages/tenancy/**
+decision: Give every tenant its own database.
+why:
+  - Physical isolation.
+by: agent

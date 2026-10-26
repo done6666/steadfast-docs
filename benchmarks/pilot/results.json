@@ -520,5 +520,160 @@
       "durationMs": 63241
     },
     "timestamp": "2026-10-26T02:43:52.852Z"
+  },
+  {
+    "task": "task7",
+    "title": "Refund with a charge reference",
+    "mode": "baseline",
+    "pass": false,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (1.170448ms)\n✔ charge is idempotent (0.311152ms)\n✔ charge rejects invalid amounts and missing keys (0.513968ms)\n✔ runtime dependencies stay empty (0.894538ms)\n✔ only the shared client calls fetch (1.212609ms)\n✔ append is idempotent per tenant and key (0.998527ms)\n✔ the ledger is append-only (0.303172ms)\n✔ refunds reduce the balance (0.212134ms)\n✔ minor units reject fractions (0.980028ms)\n✔ minor units reject negatives (0.163417ms)\n✔ addMinor adds integer amounts (0.171428ms)\n✔ formatMinor renders cents (14.385319ms)\n✔ event ids are idempotent (0.596027ms)\n✔ pending only returns pending events (0.131405ms)\n✔ the stub provider is registered (0.844096ms)\n✔ unknown providers are rejected (0.302901ms)\n✔ refund appends a refund entry and emits an outbox event (1.177129ms)\n✔ partial refunds are allowed and reduce the balance (0.187981ms)\n✔ refund is idempotent (0.157474ms)\n✔ refund uses the charge currency (0.117168ms)\n✔ a refund retry does not need to repeat the currency (0.150025ms)\n✔ a refund cannot reuse a charge idempotency key (0.229068ms)\n✔ refund must reference a charge in the same tenant (0.186531ms)\n✔ refund rejects invalid input (0.299214ms)\n✔ the read model is tenant-scoped (0.935535ms)\n✔ summaries keep at most five entries (0.201557ms)\n✔ tenant id is required (0.544071ms)\n✔ tenant comparison is explicit (0.111196ms)\n✔ entries are tenant-scoped (0.189276ms)\nℹ tests 29\nℹ suites 0\nℹ pass 29\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 71.100061\n"
+    },
+    "trap": {
+      "ok": false,
+      "status": 1,
+      "output": "✔ a refund under the remaining charge is accepted (0.748304ms)\n✖ a refund above the remaining charge is rejected per charge (0.644685ms)\n✔ an unknown charge is rejected (0.290038ms)\n✔ a cross-tenant charge is rejected (0.162222ms)\n✔ a duplicate refund key is idempotent (0.166575ms)\nℹ tests 5\nℹ suites 0\nℹ pass 4\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 43.578441\n\n✖ failing tests:\n\ntest at test/traps/task7.test.js:43:1\n✖ a refund above the remaining charge is rejected per charge (0.644685ms)\n  AssertionError [ERR_ASSERTION]: Missing expected rejection.\n      at async TestContext.<anonymous> (file:///tmp/opencode/pilot-baseline-task7-AxmbYM/test/traps/task7.test.js:64:3)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    expected: /exceed|remaining|charge/i,\n    operator: 'rejects',\n    diff: 'simple'\n  }\n"
+    },
+    "check": null,
+    "specialOk": true,
+    "special": {},
+    "contextTokens": null,
+    "baselineTokens": 10459,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0004",
+      "ADR-0009",
+      "ADR-0017"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      "packages/api/refunds.js",
+      "test/refunds.test.js",
+      "test/traps/task7.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-baseline-task7-AxmbYM",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "57b6b784ee440be4a42fb95934f000dbeef30f34",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 279761
+    },
+    "timestamp": "2026-10-26T03:04:17.168Z"
+  },
+  {
+    "task": "task7",
+    "title": "Refund with a charge reference",
+    "mode": "steadfast",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (0.621781ms)\n✔ charge is idempotent (0.165832ms)\n✔ charge rejects invalid amounts and missing keys (0.289036ms)\n✔ runtime dependencies stay empty (0.88616ms)\n✔ only the shared client calls fetch (1.101173ms)\n✔ append is idempotent per tenant and key (0.554835ms)\n✔ the ledger is append-only (0.187518ms)\n✔ refunds reduce the balance (0.179236ms)\n✔ minor units reject fractions (1.016312ms)\n✔ minor units reject negatives (0.180709ms)\n✔ addMinor adds integer amounts (0.224737ms)\n✔ formatMinor renders cents (10.066807ms)\n✔ event ids are idempotent (0.6003ms)\n✔ pending only returns pending events (0.163326ms)\n✔ the stub provider is registered (0.820347ms)\n✔ unknown providers are rejected (0.311581ms)\n✔ refund appends an entry and emits an outbox event (0.998209ms)\n✔ refund is idempotent per tenant and key (0.200547ms)\n✔ refund keys are scoped per tenant in a shared outbox (0.214649ms)\n✔ refund defaults to the charge currency (0.14568ms)\n✔ refund rejects a currency that differs from the charge (0.376315ms)\n✔ refund rejects an unknown charge (0.141368ms)\n✔ refund cannot exceed the remaining charge amount (0.224913ms)\n✔ refund only references a charge in the same tenant (0.13261ms)\n✔ refund rejects invalid amounts and missing references (0.356323ms)\n✔ the read model is tenant-scoped (0.537046ms)\n✔ summaries keep at most five entries (0.138048ms)\n✔ tenant id is required (0.58852ms)\n✔ tenant comparison is explicit (0.104632ms)\n✔ entries are tenant-scoped (0.197677ms)\nℹ tests 30\nℹ suites 0\nℹ pass 30\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 71.075448\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ a refund under the remaining charge is accepted (0.758953ms)\n✔ a refund above the remaining charge is rejected per charge (0.365613ms)\n✔ an unknown charge is rejected (0.164402ms)\n✔ a cross-tenant charge is rejected (0.147762ms)\n✔ a duplicate refund key is idempotent (0.143451ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 39.154662\n"
+    },
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 11 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1260 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {},
+    "contextTokens": 777,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0004",
+      "ADR-0009",
+      "ADR-0017"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0001.yaml",
+      ".steadfast/decisions/ADR-0002.yaml",
+      ".steadfast/decisions/ADR-0004.yaml",
+      ".steadfast/decisions/ADR-0005.yaml",
+      ".steadfast/decisions/ADR-0009.yaml",
+      ".steadfast/decisions/ADR-0017.yaml",
+      "packages/api/refunds.js",
+      "packages/ledger/outbox.js",
+      "test/refunds.test.js",
+      "test/traps/task7.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-task7-o4r6A7",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "3c36de79cfcf3e71b7e29104a6d6b5bd2c1088ec",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 402022
+    },
+    "timestamp": "2026-10-26T03:11:00.262Z"
+  },
+  {
+    "task": "task7",
+    "title": "Refund with a charge reference",
+    "mode": "steadfast-retired",
+    "pass": true,
+    "visible": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ charge appends and emits an outbox event (1.111164ms)\n✔ charge is idempotent (0.285485ms)\n✔ charge rejects invalid amounts and missing keys (0.500328ms)\n✔ runtime dependencies stay empty (1.237466ms)\n✔ only the shared client calls fetch (1.162216ms)\n✔ append is idempotent per tenant and key (0.564066ms)\n✔ the ledger is append-only (0.180037ms)\n✔ refunds reduce the balance (0.124928ms)\n✔ minor units reject fractions (0.631461ms)\n✔ minor units reject negatives (0.094269ms)\n✔ addMinor adds integer amounts (0.092387ms)\n✔ formatMinor renders cents (9.447135ms)\n✔ event ids are idempotent (0.533586ms)\n✔ pending only returns pending events (0.139138ms)\n✔ the stub provider is registered (0.474378ms)\n✔ unknown providers are rejected (0.162752ms)\n✔ refund references the charge and emits an outbox event (0.851366ms)\n✔ refund is idempotent (0.168959ms)\n✔ refund events are isolated between tenants sharing an idempotency key (0.211472ms)\n✔ refund rejects an unknown or cross-tenant charge (0.359948ms)\n✔ refund cannot exceed the remaining charge amount (0.246093ms)\n✔ refund rejects invalid input (0.325318ms)\n✔ the read model is tenant-scoped (0.913965ms)\n✔ summaries keep at most five entries (0.209554ms)\n✔ tenant id is required (0.973322ms)\n✔ tenant comparison is explicit (0.173589ms)\n✔ entries are tenant-scoped (0.478033ms)\nℹ tests 27\nℹ suites 0\nℹ pass 27\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 68.549444\n"
+    },
+    "trap": {
+      "ok": true,
+      "status": 0,
+      "output": "✔ a refund under the remaining charge is accepted (0.69634ms)\n✔ a refund above the remaining charge is rejected per charge (0.357079ms)\n✔ an unknown charge is rejected (0.149105ms)\n✔ a cross-tenant charge is rejected (0.134417ms)\n✔ a duplicate refund key is idempotent (0.13297ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 38.873778\n"
+    },
+    "check": {
+      "ok": true,
+      "status": 0,
+      "output": "steadfast check | 11 active, 1 superseded, 5 rejected, 0 retired, 0 draft | 5 invariants | 1260 memory tokens\n0 errors, 0 warnings\n"
+    },
+    "specialOk": true,
+    "special": {},
+    "contextTokens": 777,
+    "baselineTokens": null,
+    "missingRules": [],
+    "related": [
+      "ADR-0001",
+      "ADR-0002",
+      "ADR-0004",
+      "ADR-0009",
+      "ADR-0017"
+    ],
+    "scopeViolations": [],
+    "changed": [
+      ".steadfast/decisions/ADR-0001.yaml",
+      ".steadfast/decisions/ADR-0002.yaml",
+      ".steadfast/decisions/ADR-0004.yaml",
+      ".steadfast/decisions/ADR-0009.yaml",
+      ".steadfast/decisions/ADR-0017.yaml",
+      "packages/api/refunds.js",
+      "test/refunds.test.js",
+      "test/traps/task7.test.js"
+    ],
+    "dir": "/tmp/opencode/pilot-steadfast-retired-task7-JgxpUO",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "base": "006ae3d468859b6cddccdca7c3aadf948c43e27e",
+    "agent": {
+      "status": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 227108
+    },
+    "timestamp": "2026-10-26T03:14:48.238Z"
   }
 ]

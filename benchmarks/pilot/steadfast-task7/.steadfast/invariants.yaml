@@ -1,0 +1,29 @@
+# Max 25 rules. One sentence each.
+# Changing an invariant requires a decision record.
+- id: INV-001
+  rule: Amounts are integer minor units; no floating point.
+  applies_to:
+    - packages/ledger/money.js
+  enforced_by: test/money.test.js
+- id: INV-002
+  rule: Every repository and report read is tenant-scoped.
+  applies_to:
+    - packages/tenancy/**
+    - packages/ledger/repository.js
+    - packages/reports/**
+  enforced_by: test/tenancy.test.js
+- id: INV-003
+  rule: All outbound HTTP goes through packages/http/client.js.
+  applies_to:
+    - packages/provider/**
+    - packages/api/**
+  enforced_by: test/http-guard.test.js
+- id: INV-004
+  rule: The ledger is append-only; corrections are new entries.
+  applies_to:
+    - packages/ledger/**
+  enforced_by: test/ledger.test.js
+- id: INV-005
+  rule: Dependency changes require a decision record.
+  applies_to:
+    - package.json

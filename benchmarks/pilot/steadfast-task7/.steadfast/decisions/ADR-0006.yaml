@@ -1,0 +1,10 @@
+id: ADR-0006
+topic: events
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/api/**
+decision: The request handler publishes domain events directly to the broker.
+verified_by: h1:bf8932889f3fc04311932f2c7537895e54312342a7264ad484ad5463924464b7
+by: agent

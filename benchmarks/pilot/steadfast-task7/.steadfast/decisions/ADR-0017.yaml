@@ -1,0 +1,17 @@
+id: ADR-0017
+topic: refund-policy
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/api/refunds.js
+decision: Refunds must reference a known charge in the same tenant and must not exceed the remaining charge amount.
+why:
+  - A refund above the charge would create money.
+rejected:
+  - "Enforce the cap only in the nightly reporting job: the API would accept invalid money."
+guards:
+  - deny: "refund without a remaining-charge check"
+    instead: "sum prior refunds for the charge and reject the excess"
+verified_by: h1:f7c0db674b7c4c20f18b4351c3d3ac9ac707ec2db0a7893769bfbf3c4634854f
+by: agent

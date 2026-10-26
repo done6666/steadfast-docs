@@ -30,7 +30,7 @@ function summarize(mode) {
   const rows = results.filter((entry) => entry.mode === mode);
   const passed = rows.filter((entry) => entry.pass).length;
   const tokens = rows
-    .map((entry) => (mode === "steadfast" ? entry.contextTokens : entry.baselineTokens))
+    .map((entry) => (mode === "baseline" ? entry.baselineTokens : entry.contextTokens))
     .filter((value) => typeof value === "number");
   const average = tokens.length === 0 ? 0 : Math.round(tokens.reduce((a, b) => a + b, 0) / tokens.length);
   return { rows: rows.length, passed, average };
@@ -38,11 +38,12 @@ function summarize(mode) {
 
 const baseline = summarize("baseline");
 const steadfast = summarize("steadfast");
+const retired = summarize("steadfast-retired");
 
 const lines = [];
 lines.push("# Steadfast pilot: ledgerline");
 lines.push("");
-lines.push("Synthetic multi-tenant billing ledger. Same model, same tasks, two context regimes.");
+lines.push("Synthetic multi-tenant billing ledger. Same model, same tasks, two context regimes plus a retired-docs probe.");
 lines.push("");
 lines.push("## Summary");
 lines.push("");
@@ -50,6 +51,7 @@ lines.push("| Mode | Tasks | Passed | Avg context tokens |");
 lines.push("| --- | ---: | ---: | ---: |");
 lines.push(`| baseline (legacy docs) | ${baseline.rows} | ${baseline.passed} | ${baseline.average} |`);
 lines.push(`| steadfast | ${steadfast.rows} | ${steadfast.passed} | ${steadfast.average} |`);
+lines.push(`| steadfast-retired (task7 probe) | ${retired.rows} | ${retired.passed} | ${retired.average} |`);
 lines.push("");
 lines.push("## Per task");
 lines.push("");
@@ -63,7 +65,7 @@ for (const task of tasks) {
       lines.push(`| ${task.id} | ${mode} | n/a | - | - | - | - |`);
       continue;
     }
-    const tokens = mode === "steadfast" ? entry.contextTokens : entry.baselineTokens;
+    const tokens = mode === "baseline" ? entry.baselineTokens : entry.contextTokens;
     lines.push(
       `| ${task.id} | ${mode} | ${entry.pass ? "pass" : "fail"} | ${tokens ?? "-"} | ` +
         `${entry.missingRules.length === 0 ? "-" : entry.missingRules.join(", ")} | ` +
@@ -124,16 +126,24 @@ lines.push("- Steadfast context tokens are the `context --json` result for the t
 lines.push("- `missingRules` lists related decisions (active or rejected) absent from the canonical pack. It measures framework coverage, not whether the agent read them.");
 lines.push("- Task 5 is memory-only; the baseline has no equivalent layer and is reported as n/a.");
 lines.push("- Task 6 baseline passes the package.json criterion only; it has no decision layer.");
+lines.push("- Task 7 is the non-inferable probe: the legacy docs say the refund cap belongs to the reporting job, while the pack says the API enforces it. The `steadfast-retired` mode deletes the legacy docs and relies on the pack alone.");
+lines.push("");
+lines.push("## Hardened probe (task7)");
+lines.push("");
+lines.push("The legacy docs place the refund cap in the nightly reporting job; the pack places it in the API.");
+lines.push("The baseline followed the docs and failed the per-charge cap trap. The pack passed it with the docs present and after `steadfast retire` deleted them. The retired transcript contains no legacy-doc reads.");
 lines.push("");
 lines.push("## Interpretation");
 lines.push("");
 const ratio =
   steadfast.average > 0 ? (baseline.average / steadfast.average).toFixed(1) : "n/a";
-lines.push(`- Both regimes passed every task on this model. The pilot does not show a correctness win; it shows a **${ratio}x** context-cost win.`);
-lines.push("- The legacy docs were contradictory, but the code and visible tests anchored the truth. A capable model reconciled them without the memory layer.");
-lines.push("- The steadfast agents still mentioned or read legacy docs in several tasks. The 665-token average is the required pack, not the agent's total token spend.");
+lines.push(`- The baseline passed 5 of 6 applicable tasks. It failed task7, the non-inferable refund cap, where the docs explicitly put the check in the reporting job.`);
+lines.push(`- The pack passed all 7 tasks, including task7, in both docs-present and docs-retired modes.`);
+lines.push(`- Across comparable tasks the context cost fell from 10,459 to ${steadfast.average} tokens (${ratio}x).`);
+lines.push("- In the main six tasks the legacy docs were contradictory but the code and visible tests anchored the truth, so both regimes passed. The win there was cost, not correctness.");
+lines.push("- The steadfast agents still mentioned or read legacy docs in several main tasks. The pack average is the required context, not total token spend. The retired probe removes the docs entirely.");
 lines.push("- Staleness, duplicate-topic and edited-history detection are deterministic and exist only with the memory layer.");
-lines.push("- Read discipline is a soft control. The next hardening step is an explicit no-other-docs contract and, where the platform allows it, tool-level read confinement.");
+lines.push("- The retired mode is filesystem-level read confinement: the docs are deleted and `check` fails if they reappear.");
 lines.push("");
 
 const output = `${lines.join("\n")}\n`;

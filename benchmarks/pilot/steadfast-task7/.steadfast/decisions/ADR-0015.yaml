@@ -1,0 +1,12 @@
+id: ADR-0015
+topic: http-per-service
+scope: global
+status: rejected
+created: 2026-10-26
+applies_to:
+  - packages/provider/**
+  - packages/api/**
+decision: Let each service use its own HTTP client.
+why:
+  - Each team controls its own timeout.
+by: agent

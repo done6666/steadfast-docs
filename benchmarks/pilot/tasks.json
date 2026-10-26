@@ -85,5 +85,25 @@
     "allowed": ["package.json", "package-lock.json", ".prettierignore", "README.md", "packages/", "legacy-docs/", "test/", ".steadfast/"],
     "related": ["ADR-0011"],
     "trap": null
+  },
+  {
+    "id": "task7",
+    "title": "Refund with a charge reference",
+    "prompt": "tasks/task7.md",
+    "kind": "code",
+    "modes": ["baseline", "steadfast", "steadfast-retired"],
+    "seed": "steadfast-task7",
+    "context": [
+      "--for", "packages/api/refunds.js",
+      "--for", "packages/api/charges.js",
+      "--for", "packages/api/index.js",
+      "--for", "packages/ledger/repository.js",
+      "--for", "packages/ledger/outbox.js",
+      "--for", "packages/ledger/money.js",
+      "--for", "packages/tenancy/index.js"
+    ],
+    "allowed": ["packages/api/", "packages/ledger/", "packages/tenancy/", "test/", ".steadfast/"],
+    "related": ["ADR-0001", "ADR-0002", "ADR-0004", "ADR-0009", "ADR-0017"],
+    "trap": "task7.test.js"
   }
 ]

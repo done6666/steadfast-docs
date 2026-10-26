@@ -1,0 +1,19 @@
+id: ADR-0009
+topic: events
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/api/charges.js
+  - packages/api/refunds.js
+  - packages/ledger/outbox.js
+  - packages/worker/**
+
+decision: The handler writes an outbox event with the ledger entry; a worker delivers it.
+why:
+  - A broker failure after the ledger commit lost the event for two days.
+enforced_by: test/outbox.test.js
+verified_by: h1:f19cd0e29ec7abdeb0b3a83171ce5193e08c2b0079ffa7e5fb5dba85f1f7ba5d
+supersedes:
+  - ADR-0006
+by: agent

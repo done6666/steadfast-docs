@@ -1,0 +1,16 @@
+id: ADR-0002
+topic: tenancy-shared
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/tenancy/**
+  - packages/ledger/repository.js
+  - packages/reports/**
+  - packages/api/**
+decision: Every repository and report read is tenant-scoped; there is no unscoped access.
+why:
+  - One migration stream; the repository API makes unscoped reads impossible.
+enforced_by: test/tenancy.test.js
+verified_by: h1:d57e1ac8199bb29daf8729716e397c31cc16a36c28bb002da7fb593ec5f9c885
+by: agent

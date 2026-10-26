@@ -30,9 +30,12 @@ results.json        aggregated results (committed)
 - **steadfast** — the same fixture plus the seeded `.steadfast/`, the steadfast
   `AGENTS.md`, and the installed skill. The contract says to run `context` and
   not read the legacy docs.
+- **steadfast-retired** — same as steadfast, then `steadfast retire legacy-docs
+  --apply` deletes the docs and records `legacy-docs/**` in `retired_docs`.
+  This is the read-confinement probe.
 
-The agent prompt is the same in both modes. Only `AGENTS.md` and the memory
-layer differ.
+The agent prompt is the same in every mode. Only `AGENTS.md`, the memory layer
+and the presence of the legacy docs differ.
 
 ## Run
 
@@ -62,8 +65,8 @@ steadfast mode, commits a base, runs the agent with `--standalone`, then scores.
 A run passes when all of the following hold:
 
 - the visible suite passes;
-- the hidden trap for the task passes (tasks 1–4);
-- `steadfast check --strict --diff <base>` passes in steadfast mode;
+- the hidden trap for the task passes (tasks 1–4, 7);
+- `steadfast check --strict --diff <base>` passes in steadfast modes;
 - every changed path is inside the task's allowed scope;
 - the task-specific check passes (task 5: a successor record; task 6:
   `prettier` plus a decision record).

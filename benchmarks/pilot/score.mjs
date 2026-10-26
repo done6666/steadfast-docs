@@ -77,7 +77,7 @@ export function scoreRun({ dir, task, mode, base, here }) {
   let included = [];
   let packageBaselineTokens = null;
 
-  if (mode === "steadfast") {
+  if (mode !== "baseline") {
     check = run(cli, ["check", "--strict", "--diff", base], dir);
     const context = run(cli, ["context", ...task.context, "--json"], dir);
     if (context.ok) {
@@ -99,7 +99,7 @@ export function scoreRun({ dir, task, mode, base, here }) {
   }
 
   const missingRules =
-    mode === "steadfast" && task.kind !== "memory"
+    mode !== "baseline" && task.kind !== "memory"
       ? task.related.filter((id) => !included.includes(id))
       : [];
 
@@ -140,7 +140,7 @@ export function scoreRun({ dir, task, mode, base, here }) {
       typeof pkg.scripts?.format === "string";
 
     let decisionAdded = true;
-    if (mode === "steadfast") {
+    if (mode !== "baseline") {
       const diff = execFileSync("git", ["diff", "--name-status", base, "--", ".steadfast/decisions"], {
         cwd: dir,
         encoding: "utf8",

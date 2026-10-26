@@ -83,9 +83,10 @@ function prepare(mode, task) {
   const dir = mkdtempSync(join(tmpRoot, `pilot-${mode}-${task.id}-`));
   cpSync(fixture, dir, { recursive: true });
 
-  if (mode === "steadfast") {
-    cpSync(join(seed, ".steadfast"), join(dir, ".steadfast"), { recursive: true });
-    cpSync(join(seed, "AGENTS.md"), join(dir, "AGENTS.md"));
+  if (mode === "steadfast" || mode === "steadfast-retired") {
+    const seedDir = task.seed === undefined ? seed : join(here, task.seed);
+    cpSync(join(seedDir, ".steadfast"), join(dir, ".steadfast"), { recursive: true });
+    cpSync(join(seedDir, "AGENTS.md"), join(dir, "AGENTS.md"));
 
     const install = command(
       "npm",
@@ -98,6 +99,11 @@ function prepare(mode, task) {
     const cli = join(dir, "node_modules", ".bin", "steadfast");
     const skill = command(cli, ["skill", "install", "--platform", "opencode"], dir);
     if (!skill.ok) throw new Error(`skill install failed:\n${skill.stdout}${skill.stderr}`);
+
+    if (mode === "steadfast-retired") {
+      const retire = command(cli, ["retire", "legacy-docs", "--apply"], dir);
+      if (!retire.ok) throw new Error(`retire failed:\n${retire.stdout}${retire.stderr}`);
+    }
 
     const check = command(cli, ["check", "--strict"], dir);
     if (!check.ok) throw new Error(`seed check failed:\n${check.stdout}${check.stderr}`);
@@ -195,7 +201,7 @@ for (const task of tasks) {
     writeFileSync(join(runs, `${mode}-${task.id}.json`), JSON.stringify(result, null, 2));
     writeFileSync(resultsFile, JSON.stringify(results, null, 2));
 
-    const tokens = mode === "steadfast" ? result.contextTokens : result.baselineTokens;
+    const tokens = mode === "baseline" ? result.baselineTokens : result.contextTokens;
     const agentLabel = dry ? "skipped" : (result.agent.status ?? "timeout");
     console.log(
       `${result.pass ? "PASS" : "FAIL"} ${task.id}/${mode} tokens=${tokens ?? "?"} ` +

@@ -1,0 +1,13 @@
+id: ADR-0005
+topic: ledger-append-only
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - packages/ledger/**
+decision: Ledger entries are append-only; corrections are new entries.
+why:
+  - Finance needs a traceable correction, not an edit.
+enforced_by: test/ledger.test.js
+verified_by: h1:e8d5c9713ff7801917f14f34c670c44f2660933a32a09ed12c893ccd2665e85e
+by: agent

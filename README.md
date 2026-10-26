@@ -58,6 +58,14 @@ npx steadfast-docs skill install --platform opencode   # or --platform claude
 It enforces: plan the paths → `context` → restate guards → edit → `check` → `verify` → append a decision.
 `check` also fails when a project copy drifts from `skills/steadfast/SKILL.md`.
 
+After migrating a project, retire the old docs:
+
+```bash
+npx steadfast-docs retire legacy-docs --apply
+```
+
+The command deletes the documentation and records the glob in `retired_docs`; `check` fails if it returns.
+
 ## Why it does not rot
 
 - **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`. `check --diff main` compares against the merge base and rejects edits, deletions and renames of records.
@@ -65,6 +73,7 @@ It enforces: plan the paths → `context` → restate guards → edit → `check
 - **Executable claims.** `enforced_by` is a test path or a `!command`. Rules without one are advisory and expire. `check` never executes code; `verify --trust` runs record commands explicitly.
 - **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. A pack that cannot fit fails closed instead of silently overflowing.
 - **Negative memory.** Rejected proposals are first-class records, so the agent does not re-litigate dead ends.
+- **Retired docs stay retired.** `steadfast retire legacy-docs --apply` deletes the old documentation and records the glob; `check` fails if it reappears. Git history is the archive.
 - **Decision debt.** `check --diff main` flags dependency and build changes that arrived without a decision.
 
 ## What it is not
@@ -75,9 +84,9 @@ It enforces: plan the paths → `context` → restate guards → edit → `check
 
 ## Pilot
 
-`benchmarks/pilot` is a synthetic multi-tenant billing ledger with a 10.5k-token legacy docs set, four contradictions and six tasks. On DeepSeek V4.1 Flash, both regimes passed every task; the required context was **10,459 tokens** for the legacy docs versus **328–1,068 (average 665)** for compiled packs, a **15.7x** reduction. The memory layer also detected stale fingerprints, duplicate topics and edited history deterministically, while the legacy docs carried four undetected contradictions.
+`benchmarks/pilot` is a synthetic multi-tenant billing ledger with a 10.5k-token legacy docs set, four contradictions and seven tasks. In the main six tasks both regimes passed; the required context was **10,459 tokens** for the legacy docs versus **328–1,068 (average ~680)** for compiled packs, about **15x** less. A seventh, non-inferable probe changed the result: the legacy docs place the refund cap in the reporting job, the pack places it in the API. The baseline failed that trap; the pack passed it, and passed again after `steadfast retire` deleted the docs. The memory layer also detected stale fingerprints, duplicate topics and edited history deterministically, while the legacy docs carried four undetected contradictions.
 
-The pilot also found the next gap: agents still read the legacy docs unless the contract is explicit. Read confinement is the next hardening target.
+Read confinement is now a first-class command: `steadfast retire` deletes the old docs and records the glob; `check` fails if they reappear.
 
 Full report: [`benchmarks/pilot/RESULTS.md`](benchmarks/pilot/RESULTS.md).
 
@@ -105,7 +114,7 @@ node dist/src/cli.js check --strict
 
 ## Status
 
-0.1.0. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`, `skill`.
+0.1.0. The vertical slice is complete: `init`, `new`, `context`, `check`, `verify`, `retire`, `skill`.
 Next: a real-project pilot, then a benchmark harness.
 
 ## License

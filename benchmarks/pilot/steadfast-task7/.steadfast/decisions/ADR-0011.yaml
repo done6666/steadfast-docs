@@ -1,0 +1,12 @@
+id: ADR-0011
+topic: dependencies
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - package.json
+decision: Dependency changes require a decision record.
+why:
+  - Dependencies change the attack surface and the build.
+verified_by: h1:c25a14c844423b5d015dbf3e843caa64edf470df313017a4261a73a025e48810
+by: agent
