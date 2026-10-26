@@ -1,0 +1,16 @@
+id: ADR-0007
+topic: skill-copy
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - skills/**
+  - .opencode/skills/**
+decision: The canonical skill is budgeted, and every project copy is verified against it.
+why:
+  - Global copies are user-managed; project copies are enforced.
+enforced_by: test/skill.test.ts
+verified_by: h1:c66742e5afdfd03341f64bceac6a47432f2e756edcf8559cf9f6055afe732e0b
+supersedes:
+  - ADR-0006
+by: agent

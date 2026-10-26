@@ -1,0 +1,14 @@
+id: ADR-0006
+topic: skill-copy
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - skills/**
+  - .opencode/skills/**
+decision: The canonical skill is budgeted, and every installed copy is verified against it.
+why:
+  - An unverified copied skill is documentation that goes stale.
+enforced_by: test/skill.test.ts
+verified_by: h1:dc4081af7ef08429a5ff5988e685e9c439d1cf4294035b7c1883908ae533b6a8
+by: agent
