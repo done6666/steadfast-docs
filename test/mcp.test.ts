@@ -111,6 +111,113 @@ test("mcp exposes the memory tools over stdio", () => {
   assert.equal(JSON.parse(byId.get(6).content[0].text).ok, true);
 });
 
+test("mcp context forwards strict, allowPartial and the repo root", () => {
+  const root = tempDir();
+  write(root, "src/a.ts", "export const a = 1;\n");
+  write(root, "test/a.test.ts", "export {};\n");
+  assert.equal(cli(["init"], root).status, 0);
+  for (const topic of ["one", "two", "three", "four", "five"]) {
+    assert.equal(
+      cli(
+        [
+          "new",
+          "--scope",
+          "global",
+          "--topic",
+          topic,
+          "--decision",
+          `Rule ${topic}.`,
+          "--applies-to",
+          "src/**",
+          "--status",
+          "active",
+          "--enforced-by",
+          "test/a.test.ts",
+        ],
+        root,
+      ).status,
+      0,
+    );
+  }
+
+  const requests = [
+    { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } },
+    {
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: {
+        name: "context",
+        arguments: { paths: ["src/a.ts"], budget: 120 },
+      },
+    },
+    {
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/call",
+      params: {
+        name: "context",
+        arguments: { paths: ["src/a.ts"], budget: 120, allowPartial: true },
+      },
+    },
+    {
+      jsonrpc: "2.0",
+      id: 4,
+      method: "tools/call",
+      params: {
+        name: "context",
+        arguments: { paths: ["test/a.test.ts"], strict: true },
+      },
+    },
+    {
+      jsonrpc: "2.0",
+      id: 5,
+      method: "tools/call",
+      params: {
+        name: "context",
+        arguments: { paths: ["."] },
+      },
+    },
+  ];
+
+  const result = spawnSync(process.execPath, [CLI, "mcp"], {
+    cwd: root,
+    input: `${requests.map((request) => JSON.stringify(request)).join("\n")}\n`,
+    encoding: "utf8",
+    timeout: 60_000,
+  });
+  assert.equal(result.status, 0, result.stderr);
+
+  const messages = result.stdout
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as {
+      id?: number | null;
+      result?: {
+        isError?: boolean;
+        content?: Array<{ text: string }>;
+      };
+    });
+  const byId = new Map(messages.map((message) => [message.id, message.result]));
+
+  const partial = byId.get(2);
+  assert.equal(partial?.isError, true);
+  assert.match(partial?.content?.[0]?.text ?? "", /context pack is incomplete/);
+
+  const allowed = byId.get(3);
+  assert.notEqual(allowed?.isError, true);
+  assert.match(allowed?.content?.[0]?.text ?? "", /omitted: [1-9]/);
+
+  const strict = byId.get(4);
+  assert.equal(strict?.isError, true);
+  assert.match(strict?.content?.[0]?.text ?? "", /no decision matches/);
+
+  const rootPack = byId.get(5);
+  assert.notEqual(rootPack?.isError, true);
+  assert.match(rootPack?.content?.[0]?.text ?? "", /^# steadfast context v1/);
+  assert.match(rootPack?.content?.[0]?.text ?? "", /ADR-0001/);
+});
+
 test("mcp never executes record commands from verify", () => {
   const root = tempDir();
   const marker = join(root, "executed");

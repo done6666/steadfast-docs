@@ -4,6 +4,10 @@ import { estimateTokens } from "./tokens.js";
 
 export interface PackRequest {
   paths: string[];
+  /** Files a path selector actually covers. A directory selector expands here. */
+  matchPaths?: string[];
+  /** Pack-level warnings, rendered in the header and reported as issues. */
+  warnings?: string[];
   scope?: string;
   budget: number;
   maxGuards: number;
@@ -15,6 +19,11 @@ export interface PackResult {
   tokens: number;
   budget: number;
   omitted: number;
+  omittedByBudget: number;
+  omittedGuards: number;
+  requiredTokens: number;
+  requiredGuards: number;
+  guardLimit: number;
   issues: Issue[];
   included: {
     invariants: string[];
@@ -44,9 +53,19 @@ const PRIORITY: Record<Kind, number> = {
 
 const quote = (value: string): string => JSON.stringify(value);
 
-function matchedPaths(decision: Decision, paths: string[]): string[] {
+function matchedPaths(
+  decision: Decision,
+  paths: string[],
+  pathSet?: Set<string>,
+): string[] {
   if (paths.length === 0) return decision.applies_to;
-  return decision.applies_to.filter((glob) => paths.some((path) => matchGlob(path, glob)));
+  return decision.applies_to.filter((glob) => {
+    const normalized = normalizePath(glob).replace(/\/+/g, "/").replace(/\/+$/, "");
+    if (pathSet !== undefined && !/[*?]/.test(normalized)) {
+      return pathSet.has(normalized);
+    }
+    return paths.some((path) => matchGlob(path, normalized));
+  });
 }
 
 export function buildPack(
@@ -56,8 +75,15 @@ export function buildPack(
   request: PackRequest,
 ): PackResult {
   const issues: Issue[] = [];
-  const paths = request.paths.map(normalizePath).filter(Boolean);
+  const clean = (value: string): string =>
+    normalizePath(value).replace(/\/+/g, "/").replace(/\/+$/, "");
+  const paths = request.paths.map(clean).filter(Boolean);
+  const matchPaths = (request.matchPaths ?? request.paths).map(clean).filter(Boolean);
   const scope = request.scope;
+
+  for (const warning of request.warnings ?? []) {
+    issues.push({ severity: "warning", code: "context/no-rule", message: warning });
+  }
 
   if (paths.length === 0 && scope === undefined) {
     issues.push({
@@ -71,20 +97,41 @@ export function buildPack(
       tokens: 0,
       budget: request.budget,
       omitted: 0,
+      omittedByBudget: 0,
+      omittedGuards: 0,
+      requiredTokens: 0,
+      requiredGuards: 0,
+      guardLimit: request.maxGuards,
       issues,
       included: { invariants: [], decisions: [], guards: [], rejected: [] },
     };
   }
 
+  const matchPathSet = new Set(matchPaths);
+  const matchedCache = new Map<string, string[]>();
+  const matchedFor = (decision: Decision): string[] => {
+    const cached = matchedCache.get(decision.id);
+    if (cached !== undefined) return cached;
+    const value = matchedPaths(decision, matchPaths, matchPathSet);
+    matchedCache.set(decision.id, value);
+    return value;
+  };
+
+  const rankCache = new Map<string, number>();
+  const rankOf = (decision: Decision): number => {
+    const cached = rankCache.get(decision.id);
+    if (cached !== undefined) return cached;
+    const rank = Math.max(0, ...matchedFor(decision).map(specificity));
+    rankCache.set(decision.id, rank);
+    return rank;
+  };
+
   const matches = (decision: Decision): boolean => {
     const scopeHit =
       scope !== undefined && (decision.scope === scope || decision.scope === "global");
-    const pathHit = paths.length > 0 && matchedPaths(decision, paths).length > 0;
+    const pathHit = matchPaths.length > 0 && matchedFor(decision).length > 0;
     return scopeHit || pathHit;
   };
-
-  const rankOf = (decision: Decision): number =>
-    Math.max(0, ...matchedPaths(decision, paths).map(specificity));
 
   const active = decisions
     .filter((decision) => resolved.get(decision.id) === "active" && matches(decision))
@@ -100,20 +147,25 @@ export function buildPack(
 
   const selectedInvariants = invariants.filter((invariant) => {
     if (!invariant.applies_to || invariant.applies_to.length === 0) return true;
-    if (paths.length === 0) return true;
-    return invariant.applies_to.some((glob) => paths.some((path) => matchGlob(path, glob)));
+    if (matchPaths.length === 0) return paths.length === 0;
+    return invariant.applies_to.some((glob) =>
+      matchPaths.some((path) => matchGlob(path, glob)),
+    );
   });
 
   const items: Item[] = [];
+  const initialItems: Item[] = [];
 
   for (const invariant of selectedInvariants) {
-    items.push({
+    const item: Item = {
       kind: "invariant",
       priority: PRIORITY.invariant,
       rank: Number.POSITIVE_INFINITY,
       id: invariant.id,
       text: `  - id: ${invariant.id}\n    rule: ${quote(invariant.rule)}`,
-    });
+    };
+    items.push(item);
+    initialItems.push(item);
   }
 
   const guardKeys = new Set<string>();
@@ -129,41 +181,48 @@ export function buildPack(
       decision.rejected && decision.rejected.length > 0
         ? `\n    rejected: ${JSON.stringify(decision.rejected)}`
         : "";
-    items.push({
+    const decisionItem: Item = {
       kind: "decision",
       priority: PRIORITY.decision,
       rank,
       id: decision.id,
       text: `  - id: ${decision.id}\n    scope: ${decision.scope}\n    rule: ${quote(decision.decision)}${why}${rejected}`,
-    });
+    };
+    items.push(decisionItem);
+    initialItems.push(decisionItem);
 
     for (const guard of decision.guards ?? []) {
       const key = `${guard.deny}\u0000${guard.instead}`;
       if (guardKeys.has(key)) continue;
       guardKeys.add(key);
-      if (guardCount >= request.maxGuards) continue;
-      guardCount += 1;
       const check = guard.check === undefined ? "" : `\n    check: ${quote(guard.check)}`;
-      items.push({
+      const guardItem: Item = {
         kind: "guard",
         priority: PRIORITY.guard,
         rank,
-        id: `${decision.id}#${guardCount}`,
+        id: `${decision.id}#${guardKeys.size}`,
         parentId: decision.id,
         text: `  - from: ${decision.id}\n    deny: ${quote(guard.deny)}\n    instead: ${quote(guard.instead)}${check}`,
-      });
+      };
+      items.push(guardItem);
+      if (guardCount < request.maxGuards) {
+        guardCount += 1;
+        initialItems.push(guardItem);
+      }
     }
   }
 
   for (const decision of rejected) {
     const because = decision.why?.[0] ?? "rejected";
-    items.push({
+    const item: Item = {
       kind: "rejected",
       priority: PRIORITY.rejected,
       rank: rankOf(decision),
       id: decision.id,
       text: `  - id: ${decision.id}\n    proposal: ${quote(decision.decision)}\n    because: ${quote(because)}`,
-    });
+    };
+    items.push(item);
+    initialItems.push(item);
   }
 
   const activeById = new Map(active.map((decision) => [decision.id, decision]));
@@ -182,6 +241,7 @@ export function buildPack(
     lines.push(`# budget: ${tokens}/${request.budget} | omitted: ${omitted}`);
     lines.push("# Read only this output. Do not open .steadfast/ records.");
     if (request.note !== undefined) lines.push(`# note: ${request.note}`);
+    for (const warning of request.warnings ?? []) lines.push(`# warning: ${warning}`);
     if (over) lines.push("# WARNING: invariants alone exceed the budget");
     return lines;
   };
@@ -231,18 +291,25 @@ export function buildPack(
     return `${lines.join("\n").trimEnd()}\n`;
   };
 
-  const measure = (chosen: Item[], omitted: number): { text: string; tokens: number } => {
+  const measure = (
+    chosen: Item[],
+    omitted: number,
+    showOverBudget = true,
+  ): { text: string; tokens: number } => {
     const body = render(chosen, []);
     let tokens = estimateTokens(body) + 40;
     for (let pass = 0; pass < 2; pass += 1) {
-      const text = render(chosen, header(tokens, omitted, tokens > request.budget));
+      const over = showOverBudget && tokens > request.budget;
+      const text = render(chosen, header(tokens, omitted, over));
       tokens = estimateTokens(text);
     }
-    const text = render(chosen, header(tokens, omitted, tokens > request.budget));
+    const over = showOverBudget && tokens > request.budget;
+    const text = render(chosen, header(tokens, omitted, over));
     return { text, tokens: estimateTokens(text) };
   };
 
-  let chosen = [...items];
+  let chosen = [...initialItems];
+  let budgetOmitted = 0;
   let omitted = droppedGuards;
   let result = measure(chosen, omitted);
 
@@ -259,16 +326,17 @@ export function buildPack(
     if (victim === undefined) break;
 
     let next = chosen.filter((item) => item !== victim);
-    omitted += 1;
+    budgetOmitted += 1;
 
     if (victim.kind === "decision") {
       const orphans = next.filter(
         (item) => item.kind === "guard" && item.parentId === victim.id,
       );
       next = next.filter((item) => !(item.kind === "guard" && item.parentId === victim.id));
-      omitted += orphans.length;
+      budgetOmitted += orphans.length;
     }
 
+    omitted = droppedGuards + budgetOmitted;
     chosen = next;
     result = measure(chosen, omitted);
   }
@@ -278,7 +346,7 @@ export function buildPack(
       severity: "error",
       code: "context/over-budget",
       message: `invariants alone need ${result.tokens} tokens; the budget is ${request.budget}`,
-      fix: "raise budgets.context_tokens or cut invariants",
+      fix: "narrow --for, cut invariants, or ask the human to raise budgets.context_tokens",
     });
   }
 
@@ -288,12 +356,19 @@ export function buildPack(
     guards: chosen.filter((item) => item.kind === "guard").map((item) => item.id),
     rejected: chosen.filter((item) => item.kind === "rejected").map((item) => item.id),
   };
+  const requiredTokens =
+    omitted > 0 ? measure(items, 0, false).tokens : result.tokens;
 
   return {
     text: result.text,
     tokens: result.tokens,
     budget: request.budget,
     omitted,
+    omittedByBudget: budgetOmitted,
+    omittedGuards: droppedGuards,
+    requiredTokens,
+    requiredGuards: guardKeys.size,
+    guardLimit: request.maxGuards,
     issues,
     included,
   };

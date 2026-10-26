@@ -1,0 +1,16 @@
+id: ADR-0011
+topic: context-completeness
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - src/commands/context.ts
+  - src/core/pack.ts
+  - src/mcp/server.ts
+  - test/context.test.ts
+decision: Context packs expand selectors and fail instead of returning a partial pack; uncovered selectors warn and fail under --strict.
+why:
+  - A directory-blind or truncated pack silently drops rules.
+enforced_by: test/context.test.ts
+verified_by: h1:f62bba936774b67b545da702260a0513c25e81cdff631e80855e4af29889d5a0
+by: agent

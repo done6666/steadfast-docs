@@ -16,8 +16,7 @@ OpenCode, `mcp__steadfast__*` in Claude).
 
 ## 1. Plan the path set
 
-Before editing, list every file or directory the task will touch.
-If you cannot yet, start with three paths and expand as you learn.
+Before editing, list the files or directories you will touch.
 
 ## 2. Load only the pack
 
@@ -25,17 +24,18 @@ Run:
 
     npx steadfast-docs context --for <path[,path]>
 
-Read the output. Do not open `.steadfast/decisions/`, superseded or retired
-records. Do not read other documentation, ADRs, architecture notes or READMEs.
-They are the drift this replaces; the pack is complete only when its header
-says `omitted: 0`.
+Files, directories and globs are accepted. Read the output. Do not open
+`.steadfast/decisions/`, superseded or retired records, other docs, ADRs or
+READMEs. They are the drift this replaces.
 
-When the path set grows, run the command again with the full set.
-If the header shows `omitted` above zero, the pack is incomplete: narrow the
-path set and re-run, or stop and report. Never edit on a partial pack.
-If the pack reports `over-budget`, stop; never guess missing rules.
-If legacy documentation still exists in the working tree, stop and ask the
-human to retire it with `steadfast retire <path> --apply`.
+When it grows, re-run.
+`context` refuses a pack with `omitted` above zero; narrow the paths; never
+pass `--allow-partial` or edit on a partial pack. When it fails, stop and
+report the current and needed budget; do not change config or raise --budget yourself. A
+`warning: no decision matches` means the path is uncovered: proceed with
+invariants; record a decision for a non-obvious choice.
+`warning: selector matched no tracked files` means the path is wrong; fix it.
+If legacy docs remain, ask for `steadfast retire <path> --apply`.
 
 ## 3. Restate the constraints
 

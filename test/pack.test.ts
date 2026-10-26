@@ -70,6 +70,30 @@ test("packs contain only decisions that match the target paths", () => {
   assert.doesNotMatch(pack.text, /INV-002/);
 });
 
+test("match paths let a directory selector reach a file rule", () => {
+  const pack = buildPack(decisions, invariants, resolved, {
+    paths: ["src/billing"],
+    matchPaths: ["src/billing", "src/billing/charge.ts"],
+    budget: 1500,
+    maxGuards: 30,
+  });
+
+  assert.match(pack.text, /ADR-0001/);
+  assert.match(pack.text, /paths: src\/billing/);
+});
+
+test("pack warnings are rendered and reported", () => {
+  const pack = buildPack(decisions, invariants, resolved, {
+    paths: ["src/unknown.ts"],
+    warnings: ['no decision matches "src/unknown.ts"'],
+    budget: 1500,
+    maxGuards: 30,
+  });
+
+  assert.match(pack.text, /# warning: no decision matches "src\/unknown\.ts"/);
+  assert.ok(pack.issues.some((issue) => issue.code === "context/no-rule"));
+});
+
 test("guards and tests are included", () => {
   const pack = buildPack(decisions, invariants, resolved, {
     paths: ["src/billing/charge.ts"],
@@ -174,8 +198,17 @@ test("budgets are hard caps and truncation is reported", () => {
 
   assert.ok(pack.tokens <= 260, `tokens ${pack.tokens} exceeded budget`);
   assert.ok(pack.omitted > 0);
+  assert.ok(pack.omittedByBudget > 0);
+  assert.ok(pack.requiredTokens > 260);
   assert.match(pack.text, /omitted: [1-9]/);
   assert.match(pack.text, /INV-001/);
+
+  const complete = buildPack(many, invariants.slice(0, 1), localResolved, {
+    paths: ["src/billing/charge.ts"],
+    budget: pack.requiredTokens,
+    maxGuards: 30,
+  });
+  assert.equal(complete.omitted, 0);
 });
 
 test("global scope does not bypass applies_to in path mode", () => {
@@ -264,4 +297,14 @@ test("the guard cap is enforced and counted", () => {
   });
   assert.equal(pack.included.guards.length, 1);
   assert.ok(pack.omitted >= 2);
+  assert.equal(pack.omittedGuards, 2);
+  assert.equal(pack.requiredGuards, 3);
+  assert.equal(pack.guardLimit, 1);
+
+  const complete = buildPack(guarded, [], localResolved, {
+    paths: ["src/billing/charge.ts"],
+    budget: pack.requiredTokens,
+    maxGuards: 3,
+  });
+  assert.equal(complete.omitted, 0);
 });

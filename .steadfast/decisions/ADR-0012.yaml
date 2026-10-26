@@ -1,0 +1,15 @@
+id: ADR-0012
+topic: budget-approval
+scope: global
+status: active
+created: 2026-10-26
+applies_to:
+  - src/commands/context.ts
+  - src/mcp/server.ts
+  - test/context.test.ts
+decision: Context may only lower its token budget; raising budgets.context_tokens requires a human config change.
+why:
+  - A local --budget or MCP override would bypass the fail-closed gate without a trace.
+enforced_by: test/context.test.ts
+verified_by: h1:f963211128f9daae9032f2a0cef8f60f16b224bea65dde68c974c21d3b37342d
+by: agent

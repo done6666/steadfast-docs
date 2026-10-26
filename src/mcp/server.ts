@@ -59,10 +59,10 @@ function stringArray(value: unknown): string[] {
 function repoPath(value: string): string | undefined {
   const absolute = isAbsolute(value) ? value : resolve(ROOT, value);
   const path = toPosix(relative(ROOT, absolute));
-  if (path.length === 0 || path === ".." || path.startsWith("../") || isAbsolute(path)) {
+  if (path === ".." || path.startsWith("../") || isAbsolute(path)) {
     return undefined;
   }
-  return path;
+  return path.length === 0 ? "." : path;
 }
 
 function contextTool(args: Record<string, unknown>): ToolResult {
@@ -86,6 +86,8 @@ function contextTool(args: Record<string, unknown>): ToolResult {
   for (const path of normalized) cliArgs.push("--for", path);
   if (scope !== undefined) cliArgs.push("--scope", scope);
   if (budget !== undefined) cliArgs.push("--budget", String(budget));
+  if (args.strict === true) cliArgs.push("--strict");
+  if (args.allowPartial === true) cliArgs.push("--allow-partial");
 
   const result = runCli(cliArgs);
   if (result.status !== 0) return failure(result);
@@ -206,13 +208,26 @@ const TOOLS = [
   {
     name: "context",
     description:
-      "Compile the token-budgeted memory pack for the paths you will touch. Read only this output; do not open .steadfast/decisions or legacy docs.",
+      "Compile the token-budgeted memory pack for the paths you will touch. Fails by default instead of returning a truncated pack; allowPartial explicitly permits one. Read only this output; do not open .steadfast/decisions or legacy docs.",
     inputSchema: {
       type: "object",
       properties: {
-        paths: { type: "array", items: { type: "string" }, minItems: 1 },
-        scope: { type: "string" },
-        budget: { type: "integer", minimum: 1 },
+        paths: {
+          type: "array",
+          items: { type: "string" },
+          minItems: 1,
+          description: "Files, directories or globs. Directories and globs expand to the files beneath them.",
+        },
+        scope: { type: "string", description: "Include every record in this scope, plus global records." },
+        budget: { type: "integer", minimum: 1, description: "Override budgets.context_tokens; may only lower the configured cap." },
+        strict: {
+          type: "boolean",
+          description: "Fail when a path selector matches no decision or no tracked files.",
+        },
+        allowPartial: {
+          type: "boolean",
+          description: "Print a pack even when the budget omits records. Do not use unless a human asked.",
+        },
       },
       additionalProperties: false,
     },

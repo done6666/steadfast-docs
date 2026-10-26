@@ -35,7 +35,7 @@ const DATE_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 const HASH_RE = /^h1:[0-9a-f]{64}$/;
 const STATUSES: readonly Status[] = ["active", "rejected", "retired", "draft"];
 
-const BUDGET_BOUNDS: Record<keyof Budgets, readonly [number, number]> = {
+export const BUDGET_BOUNDS: Record<keyof Budgets, readonly [number, number]> = {
   context_tokens: [200, 50_000],
   decision_tokens: [40, 1_000],
   invariants: [1, 25],
