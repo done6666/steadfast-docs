@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { basename, join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { basename, join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import { parse } from "yaml";
 import { FileIndex } from "../core/fingerprint.js";
@@ -7,6 +7,7 @@ import { changedEntries, fileAtRef, gitRoot, isValidRef } from "../core/git.js";
 import type { Change } from "../core/git.js";
 import { buildGraph } from "../core/graph.js";
 import { safeFile } from "../core/paths.js";
+import { installedSkillTargets, readCanonicalSkill } from "../core/skill.js";
 import { loadProject } from "../core/store.js";
 import { estimateTokens, recordTokens } from "../core/tokens.js";
 import { validateDecision } from "../core/validate.js";
@@ -198,6 +199,45 @@ export async function checkCommand(argv: string[]): Promise<number> {
         file: ".steadfast/invariants.yaml",
         id: invariant.id,
       });
+    }
+  }
+
+  let canonicalSkill: string | undefined;
+  const skillCopies = installedSkillTargets(root);
+  if (skillCopies.length > 0) {
+    try {
+      canonicalSkill = readCanonicalSkill();
+    } catch (error) {
+      issues.push({
+        severity: "error",
+        code: "skill/missing-source",
+        message: `cannot read the canonical skill: ${(error as Error).message}`,
+      });
+    }
+  }
+
+  if (canonicalSkill !== undefined) {
+    for (const target of skillCopies) {
+      const file = relative(root, target.path).replace(/\\/g, "/");
+      const safe = safeFile(root, file);
+      if (safe === undefined) {
+        issues.push({
+          severity: "error",
+          code: "skill/outside-root",
+          message: `${target.platform} skill path escapes the project`,
+          file,
+        });
+        continue;
+      }
+      if (readFileSync(safe, "utf8") !== canonicalSkill) {
+        issues.push({
+          severity: "error",
+          code: "skill/stale",
+          message: `${target.platform} skill copy differs from skills/steadfast/SKILL.md`,
+          file,
+          fix: `steadfast skill install --platform ${target.platform} --force`,
+        });
+      }
     }
   }
 
