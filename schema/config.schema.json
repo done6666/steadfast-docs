@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steadfast.dev/schema/config.schema.json",
+  "title": "Steadfast project config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version"],
+  "properties": {
+    "version": { "const": 1 },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "context_tokens": { "type": "integer", "minimum": 200, "maximum": 50000 },
+        "decision_tokens": { "type": "integer", "minimum": 40, "maximum": 1000 },
+        "invariants": { "type": "integer", "minimum": 1, "maximum": 25 },
+        "guards": { "type": "integer", "minimum": 1, "maximum": 100 }
+      }
+    },
+    "advisory_ttl_days": { "type": "integer", "minimum": 1, "maximum": 3650 }
+  }
+}

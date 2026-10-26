@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steadfast.dev/schema/decision.schema.json",
+  "title": "Steadfast decision record",
+  "description": "One append-only decision. Records are data, not prose. Never edit an existing record; append a new one and list the old id in supersedes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "topic", "scope", "status", "created", "applies_to", "decision"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^ADR-[0-9]{4,}$",
+      "description": "Stable identifier. Never reused."
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 48,
+      "description": "Topic key. Unique among active records within the same scope."
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 32,
+      "description": "Subsystem or package. Use 'global' for repo-wide rules."
+    },
+    "status": {
+      "enum": ["active", "rejected", "retired", "draft"],
+      "description": "Declared status. 'superseded' is never written; it is derived from other records' supersedes lists."
+    },
+    "created": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "applies_to": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+      "description": "Repo-relative globs. Used both to select context and to fingerprint staleness."
+    },
+    "decision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "One sentence stating the rule in force (active), the rejected proposal (rejected), or the retired rule (retired)."
+    },
+    "why": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+    },
+    "rejected": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1, "maxLength": 160 },
+      "description": "Alternatives considered inside this decision, formatted 'alternative: reason'. A fully rejected proposal is its own record with status rejected."
+    },
+    "guards": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/guard" }
+    },
+    "enforced_by": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "A repo-relative test file (declarative) or a command prefixed with '!' (executable). Without it the record is advisory and expires."
+    },
+    "verified_by": {
+      "type": "string",
+      "pattern": "^h1:[0-9a-f]{64}$",
+      "description": "Content fingerprint of the files matched by applies_to at the last verification. Required for active records."
+    },
+    "supersedes": {
+      "type": "array",
+      "maxItems": 8,
+      "items": { "type": "string", "pattern": "^ADR-[0-9]{4,}$" }
+    },
+    "by": {
+      "enum": ["agent", "human"],
+      "default": "agent"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["status"], "properties": { "status": { "const": "active" } } },
+      "then": { "required": ["verified_by"] }
+    },
+    {
+      "if": { "required": ["status"], "properties": { "status": { "enum": ["rejected", "retired"] } } },
+      "then": { "required": ["why"], "properties": { "why": { "minItems": 1 } } }
+    },
+    {
+      "if": { "required": ["status"], "properties": { "status": { "enum": ["rejected", "retired"] } } },
+      "then": { "properties": { "guards": { "maxItems": 0 } } }
+    }
+  ],
+  "$defs": {
+    "guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deny", "instead"],
+      "properties": {
+        "deny": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "instead": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "check": { "type": "string", "minLength": 1, "maxLength": 160 }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steadfast.dev/schema/invariants.schema.json",
+  "title": "Steadfast invariants",
+  "description": "The constitution of a project. Few, stable, always loaded rules. Changes require a decision record.",
+  "type": "array",
+  "maxItems": 25,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "rule"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^INV-[0-9]{3,}$" },
+      "rule": { "type": "string", "minLength": 1, "maxLength": 160 },
+      "applies_to": {
+        "type": "array",
+        "maxItems": 8,
+        "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+      },
+      "enforced_by": { "type": "string", "minLength": 1, "maxLength": 200 }
+    }
+  }
+}
