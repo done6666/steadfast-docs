@@ -11,7 +11,7 @@ The agent loop lives in `skills/steadfast/SKILL.md` and is installed with `node 
 1. `npm run build`
 2. `node dist/src/cli.js context --for <paths you will touch>`
 
-Use only that output for context. Do not load other records, superseded or retired ones.
+Use only that output for context. If the pack is incomplete, narrow the paths or ask the human before raising the budget; do not pass `--allow-partial`. Do not load other records, superseded or retired ones.
 After `steadfast new`, fill the record you just created.
 
 ## Before committing

@@ -13,6 +13,7 @@ const AGENTS_BLOCK = `${BEGIN}
 ## Project memory
 
 If the steadfast MCP server is connected, call \`steadfast_context\` (OpenCode) or \`mcp__steadfast__context\` (Claude) with the paths you will touch; otherwise run \`npx steadfast-docs context --for <paths>\`. Use only that output for context.
+If context fails, narrow the paths or ask the human before raising the budget; do not pass \`--allow-partial\`.
 Records are not reading material: do not load other records, legacy docs or architecture notes. The pack is the only context.
 After a new record, fill the record you just created. Never edit an active record; supersede it.
 

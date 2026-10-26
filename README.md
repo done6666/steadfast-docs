@@ -2,11 +2,11 @@
 
 **Normative project memory for AI coding agents.**
 
-Documentation that only agents read. Humans ask; agents remember; CI enforces.
+Documentation that only agents read. Humans ask; agents remember; CI keeps the memory honest.
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-123-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-132-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
@@ -62,6 +62,8 @@ npx steadfast-docs skill install --platform opencode
 
 The agent plans the paths, calls `context`, reads only the pack, implements, runs the tests, calls `check` and `verify`, and appends a decision when it made a non-obvious choice. You see a short summary and the decisions that need approval — never a document to review.
 
+`context --for` accepts files, directories or globs. A directory expands to the files beneath it, and a glob expands to the files it matches, so `src/core` finds a rule declared for `src/core/pack.ts`. A selector that matches no decision is called out in the pack; `--strict` turns that into a failure.
+
 ## Native agent tools
 
 `mcp install` registers a local stdio server with the agent:
@@ -99,8 +101,8 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 
 - **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`.
 - **Content fingerprints.** `verified_by` hashes the files matched by `applies_to`, not a commit sha. Verify before committing; rebases cannot invalidate it.
-- **Executable claims.** `enforced_by` is a test path or a `!command`. Rules without one are advisory and expire. `check` never executes code; `verify --trust` runs record commands explicitly.
-- **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. A pack that cannot fit fails closed.
+- **Declared enforcement.** `enforced_by` is a test path or a `!command`. `check` verifies that a test path exists but never runs it; `verify --assume` is an explicit assertion that the test passed. Rules without one are advisory and are flagged after `advisory_ttl_days` (a failure under `--strict`).
+- **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. `context` exits 2 with the token or guard count needed, so the agent can ask before raising the budget; `--budget` may only lower the configured cap, and `--allow-partial` is the explicit escape hatch.
 - **Negative memory.** Rejected proposals are first-class records, so the agent does not re-litigate dead ends.
 - **Retired docs stay retired.** `retire` deletes the old documentation and records the glob; `check` fails if it reappears. Git history is the archive.
 - **Agent-native.** The MCP server and CLI share one contract; the pre-commit hook enforces `check` even when the agent forgets.
@@ -111,7 +113,7 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 | Command | Purpose |
 | --- | --- |
 | `npx steadfast-docs init [--adopt]` | Scaffold `.steadfast/` and the `AGENTS.md` contract |
-| `npx steadfast-docs context --for <paths>` | Compile the token-budgeted pack for a task |
+| `npx steadfast-docs context --for <paths>` | Compile the token-budgeted pack for a task (files, dirs or globs) |
 | `npx steadfast-docs check --strict --diff main` | Validate schema, graph, freshness, paths, budgets and history |
 | `npx steadfast-docs new ...` | Append a decision record |
 | `npx steadfast-docs explain <id>` | Inspect one record, its status and successor |
@@ -150,7 +152,7 @@ npx steadfast-docs retire legacy-docs --apply
 
 ## What it is not
 
-- Not a memory bank or a RAG store. Those recall what happened; this enforces what must hold.
+- Not a memory bank or a RAG store. Those recall what happened; this records what was decided and detects when the record or the code it governs drifts.
 - Not human documentation. In a steadfast project, humans talk to the agent and read code; the memory is machine-first.
 - Not a documentation generator. If a fact can be derived from code, derive it; do not store it.
 
@@ -162,9 +164,11 @@ npx steadfast-docs retire legacy-docs --apply
 
 **What happens when a decision changes?** Run `steadfast supersede <id> --decision "<rule>"`; it inherits enforcement and guards, and the old record resolves to superseded. Never edit an active record. `check --diff main` rejects edits, deletions and renames.
 
-**What if the agent ignores the contract?** The commit or PR fails `check --strict`; the memory is enforced, not advisory.
+**What if the pack is over budget?** `context` stops, prints the current and needed token or guard counts, and the agent is instructed to ask you before changing `.steadfast/config.yaml` or passing `--allow-partial`. A local `--budget` cannot raise the configured cap.
 
-**Is it production-ready?** The protocol and CLI are covered by 123 tests, but the pilot is synthetic. Start with a non-critical repo.
+**What if the agent ignores the contract?** The commit or PR fails `check --strict` for memory violations (edited history, stale fingerprints, budgets, retired docs). A code-level rule is only as strong as the `enforced_by` test or linter behind it.
+
+**Is it production-ready?** The protocol and CLI are covered by 132 tests, but the pilot is synthetic. Start with a non-critical repo.
 
 ## Development
 
@@ -181,7 +185,7 @@ node dist/src/cli.js check --strict
 
 ## Status
 
-0.2.0 published. The agent-native slice is complete: `init`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
+0.2.1 published. The agent-native slice is complete: `init`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
 Next: task-scope contracts (`start` / `check` / `end`) and a real-project pilot.
 
 ## License
