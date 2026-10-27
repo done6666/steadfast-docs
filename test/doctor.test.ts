@@ -70,6 +70,26 @@ test("doctor passes once the skill and MCP config are installed", () => {
   assert.equal(report.stats.errors, 0);
 });
 
+test("doctor accepts a local CLI MCP config", () => {
+  const root = tempDir();
+  assert.equal(cli(["init"], root).status, 0);
+  write(
+    root,
+    "opencode.json",
+    JSON.stringify({
+      mcp: {
+        servers: {
+          steadfast: { type: "local", command: ["node", "dist/src/cli.js", "mcp"] },
+        },
+      },
+    }),
+  );
+
+  const { status, report } = doctor(root);
+  assert.equal(status, 0, JSON.stringify(report));
+  assert.equal(statusOf(report, "mcp"), "ok");
+});
+
 test("doctor does not count superseded records as advisory", () => {
   const root = tempDir();
   write(root, "test/a.test.ts", "export {};\n");

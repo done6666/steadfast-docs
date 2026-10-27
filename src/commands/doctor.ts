@@ -63,7 +63,10 @@ function mcpConfigured(root: string): boolean {
   return files.some((path) => {
     if (!existsSync(path)) return false;
     const text = readFileSync(path, "utf8");
-    return text.includes("steadfast") && text.includes("steadfast-docs");
+    return (
+      text.includes("steadfast") &&
+      (text.includes("steadfast-docs") || text.includes("cli.js"))
+    );
   });
 }
 
