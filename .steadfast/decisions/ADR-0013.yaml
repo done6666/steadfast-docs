@@ -10,5 +10,5 @@ decision: retire --apply stages the document deletion and config update in a git
 why:
   - An unstaged deletion remains in the index, so check still sees the retired document.
 enforced_by: test/retire.test.ts
-verified_by: h1:3927b64ccc0d259fddc3d3ad1f147ac681d81583479ffed7764223239282d418
+verified_by: h1:78650bcf3dbf91f1db10cc1f406282ff296fbaf12e8fe91e70584a4b3c6bbcb2
 by: agent

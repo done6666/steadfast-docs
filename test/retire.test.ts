@@ -96,6 +96,35 @@ test("retire stages config when the docs were never tracked", () => {
   assert.equal(cli(["check", "--strict", "--staged", "--diff", "HEAD"], root).status, 0);
 });
 
+test("retire --apply --no-stage leaves the changes unstaged", () => {
+  const root = gitProject();
+
+  const invalid = cli(["retire", "legacy-docs", "--no-stage"], root);
+  assert.equal(invalid.status, 2);
+  assert.match(invalid.stderr, /requires --apply/);
+
+  const result = cli(["retire", "legacy-docs", "--apply", "--no-stage"], root);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /not staged: --no-stage/);
+
+  const staged = execFileSync("git", ["diff", "--cached", "--name-only"], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim();
+  assert.equal(staged, "");
+
+  const unstaged = execFileSync("git", ["diff", "--name-only"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.match(unstaged, /legacy-docs\/architecture\.md/);
+  assert.match(unstaged, /\.steadfast\/config\.yaml/);
+
+  const check = cli(["check", "--strict"], root);
+  assert.equal(check.status, 1);
+  assert.match(check.stdout, /docs\/retired-present/);
+});
+
 test("a real config change remains decision debt", () => {
   const root = gitProject();
   const configPath = join(root, ".steadfast", "config.yaml");

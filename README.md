@@ -6,7 +6,7 @@ Documentation that only agents read. Humans ask; agents remember; CI keeps the m
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-136-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-137-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
@@ -104,7 +104,7 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 - **Declared enforcement.** `enforced_by` is a test path or a `!command`. `check` verifies that a test path exists but never runs it; `verify --assume` is an explicit assertion that the test passed. Rules without one are advisory and are flagged after `advisory_ttl_days` (a failure under `--strict`).
 - **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. `context` exits 2 with the token or guard count needed, so the agent can ask before raising the budget; `--budget` may only lower the configured cap, and `--allow-partial` is the explicit escape hatch.
 - **Negative memory.** Rejected proposals are first-class records, so the agent does not re-litigate dead ends.
-- **Retired docs stay retired.** `retire` deletes the old documentation and records the glob; `check` fails if it reappears. In a git worktree it stages the deletion and the config update, so `check` sees the retired state immediately. Git history is the archive.
+- **Retired docs stay retired.** `retire` deletes the old documentation and records the glob; `check` fails if it reappears. In a git worktree it stages the deletion and the config update, so `check` sees the retired state immediately; `--no-stage` leaves both for selective staging. Git history is the archive.
 - **Agent-native.** The MCP server and CLI share one contract; the pre-commit hook enforces `check` even when the agent forgets.
 - **Decision debt.** `check --diff main` flags dependency and build changes that arrived without a decision.
 
@@ -119,7 +119,7 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 | `npx steadfast-docs explain <id>` | Inspect one record, its status and successor |
 | `npx steadfast-docs supersede <id> --decision <text>` | Append a successor; the old record is derived as superseded |
 | `npx steadfast-docs verify <ids> --assume` | Recompute fingerprints after the tests pass |
-| `npx steadfast-docs retire <path> --apply` | Delete legacy docs, stage the change and enforce `retired_docs` |
+| `npx steadfast-docs retire <path> --apply [--no-stage]` | Delete legacy docs, stage the change and enforce `retired_docs` |
 | `npx steadfast-docs mcp install` | Register the MCP server (or run `mcp` to start it) |
 | `npx steadfast-docs hook install` | Add the managed pre-commit `check` |
 | `npx steadfast-docs doctor` | Diagnose contract, skill, MCP, hook, freshness and advisories |
@@ -148,7 +148,7 @@ npx steadfast-docs check --strict
 npx steadfast-docs retire legacy-docs --apply
 ```
 
-`retire` is a dry run by default. It refuses source files, the root `README.md`, `AGENTS.md` and symlinks. `--apply` deletes the documentation, records `legacy-docs/**` in `retired_docs`, and stages both changes when run inside a git worktree; `check` fails if the docs return.
+`retire` is a dry run by default. It refuses source files, the root `README.md`, `AGENTS.md` and symlinks. `--apply` deletes the documentation, records `legacy-docs/**` in `retired_docs`, and stages both changes when run inside a git worktree; `--no-stage` leaves them unstaged. `check` fails if the docs return.
 
 ## What it is not
 
@@ -168,7 +168,7 @@ npx steadfast-docs retire legacy-docs --apply
 
 **What if the agent ignores the contract?** The commit or PR fails `check --strict` for memory violations (edited history, stale fingerprints, budgets, retired docs). A code-level rule is only as strong as the `enforced_by` test or linter behind it.
 
-**Is it production-ready?** The protocol and CLI are covered by 136 tests, but the pilot is synthetic. Start with a non-critical repo.
+**Is it production-ready?** The protocol and CLI are covered by 137 tests, but the pilot is synthetic. Start with a non-critical repo.
 
 ## Development
 

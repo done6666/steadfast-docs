@@ -1,0 +1,14 @@
+id: ADR-0015
+topic: retire-no-stage
+scope: global
+status: active
+created: 2026-10-27
+applies_to:
+  - src/commands/retire.ts
+  - test/retire.test.ts
+decision: retire --apply --no-stage leaves the document deletion and config update unstaged.
+why:
+  - Selective-commit workflows need the retirement not to alter the index.
+enforced_by: test/retire.test.ts
+verified_by: h1:78650bcf3dbf91f1db10cc1f406282ff296fbaf12e8fe91e70584a4b3c6bbcb2
+by: agent

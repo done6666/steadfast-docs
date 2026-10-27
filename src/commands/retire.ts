@@ -128,6 +128,7 @@ export async function retireCommand(argv: string[]): Promise<number> {
     options: {
       root: { type: "string" },
       apply: { type: "boolean", default: false },
+      "no-stage": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
     allowPositionals: true,
@@ -135,18 +136,23 @@ export async function retireCommand(argv: string[]): Promise<number> {
   });
 
   if (values.help) {
-    write("steadfast retire <path...> [--apply]");
+    write("steadfast retire <path...> [--apply] [--no-stage]");
     write("");
     write("  Moves legacy documentation out of the working tree.");
     write("  Dry-run by default. --apply deletes the files and records");
     write("  the globs in .steadfast/config.yaml as retired_docs, so check");
     write("  fails if they reappear. Git history is the archive.");
     write("  In a git worktree, --apply also stages the deletion and config.");
+    write("  --no-stage leaves both unstaged so you can stage them yourself.");
     return 0;
   }
 
   if (positionals.length === 0) {
     writeError("error: pass at least one documentation path");
+    return 2;
+  }
+  if (values["no-stage"] && !values.apply) {
+    writeError("error: --no-stage requires --apply");
     return 2;
   }
 
@@ -208,11 +214,14 @@ export async function retireCommand(argv: string[]): Promise<number> {
     rmSync(plan.absolute, { recursive: true, force: true });
   }
 
-  const staging = stageRetirement(
-    root,
-    plans.map((plan) => plan.input),
-    ".steadfast/config.yaml",
-  );
+  const inGit = gitRoot(root) !== undefined;
+  const staging = values["no-stage"]
+    ? { status: "skipped" as const, deletions: 0 }
+    : stageRetirement(
+        root,
+        plans.map((plan) => plan.input),
+        ".steadfast/config.yaml",
+      );
 
   write("");
   write(`${paint.green("retired")} ${totalFiles} files, ~${totalTokens} tokens`);
@@ -227,8 +236,14 @@ export async function retireCommand(argv: string[]): Promise<number> {
     writeError(
       "warning: could not stage the retirement; run git add -A -- <paths> .steadfast/config.yaml",
     );
+  } else if (values["no-stage"] && inGit) {
+    write("  not staged: --no-stage; run git add -A -- <paths> .steadfast/config.yaml");
   }
   write(`  recover: git log -- ${plans.map((plan) => plan.input).join(" ")}`);
-  write("next: steadfast check --strict");
+  write(
+    values["no-stage"] && inGit
+      ? "next: stage the retirement, then steadfast check --strict"
+      : "next: steadfast check --strict",
+  );
   return staging.status === "failed" ? 1 : 0;
 }
