@@ -14,7 +14,7 @@
     "url": "https://github.com/done6666/steadfast-docs/issues"
   },
   "bin": {
-    "steadfast": "./dist/src/cli.js"
+    "steadfast": "dist/src/cli.js"
   },
   "files": [
     "dist/src",

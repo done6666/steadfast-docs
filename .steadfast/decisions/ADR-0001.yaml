@@ -9,5 +9,5 @@ decision: Runtime dependencies are limited to yaml.
 why:
   - A tool that fights token bloat cannot ship a framework.
 enforced_by: test/deps.test.ts
-verified_by: h1:c652acee1db72611d28f7a41ed6a46c41127c757d033c13988402733db9b7ef8
+verified_by: h1:6d8de516154abb98cb6b57ffc5202754c9e94e565732fbb61020e856ab55433d
 by: agent
