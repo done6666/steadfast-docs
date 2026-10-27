@@ -65,7 +65,9 @@ function mcpConfigured(root: string): boolean {
     const text = readFileSync(path, "utf8");
     return (
       text.includes("steadfast") &&
-      (text.includes("steadfast-docs") || text.includes("cli.js"))
+      (text.includes("steadfast-docs") ||
+        text.includes("cli.js") ||
+        text.includes("/bin/steadfast"))
     );
   });
 }
