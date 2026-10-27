@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "servers": {
+      "steadfast": {
+        "type": "local",
+        "command": [
+          "node",
+          "dist/src/cli.js",
+          "mcp"
+        ]
+      }
+    }
+  }
+}

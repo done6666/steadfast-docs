@@ -1,0 +1,3 @@
+# Execution state: mutable. One current step. Decisions stay in .steadfast/decisions/.
+version: 1
+steps: []

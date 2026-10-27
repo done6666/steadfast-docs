@@ -58,6 +58,8 @@ function hookBlock(root: string, git: string, hookPath: string): string {
 ${cd}  run_steadfast() {
     if [ -x "./node_modules/.bin/steadfast" ]; then
       ./node_modules/.bin/steadfast "$@"
+    elif [ -f "./dist/src/cli.js" ]; then
+      node ./dist/src/cli.js "$@"
     else
       npx -y steadfast-docs "$@"
     fi
