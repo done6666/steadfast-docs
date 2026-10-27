@@ -14,7 +14,8 @@ from the pack only.
 - Memory: 18 decisions, 4 invariants, 5 advisory rules
 
 The branch is intentionally separate from `development` so the baseline and
-the migrated tree can be compared. It is not merged yet.
+the migrated tree can be compared. It is a lab branch: do not merge it without a
+separate adoption decision.
 
 ## Measurements
 
@@ -44,7 +45,8 @@ after migration; `check` fails if it reappears.
 ## Current state
 
 - The migration and the new job work live on `steadfast-pilot` (`8eb26eb`).
-- `development` still has `docs/job-mimari.md`; merge or retire it there.
+- `development` still has `docs/job-mimari.md`; only retire it there after an
+  explicit adoption decision.
 - `doctor` reports five advisory rules: ADR-0012 through ADR-0016.
 - The pilot branch has not been pushed or reviewed.
 
