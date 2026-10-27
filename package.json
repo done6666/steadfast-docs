@@ -1,6 +1,6 @@
 {
   "name": "steadfast-docs",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Normative project memory for AI coding agents. Append-only decisions, compiled context packs, enforced staleness.",
   "type": "module",
   "license": "MIT",
