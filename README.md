@@ -6,7 +6,7 @@ Documentation that only agents read. Humans ask; agents remember; CI keeps the m
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-170-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-171-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
