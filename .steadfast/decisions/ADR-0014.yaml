@@ -1,0 +1,14 @@
+id: ADR-0014
+topic: retire-debt
+scope: global
+status: active
+created: 2026-10-27
+applies_to:
+  - src/commands/check.ts
+  - test/retire.test.ts
+decision: A config change that only updates retired_docs is not decision debt.
+why:
+  - retire records the retirement itself; a second record would be noise.
+enforced_by: test/retire.test.ts
+verified_by: h1:d14970b21fdd43a086203e8693dd38e86438ef88066381ec335c982662eec4f3
+by: agent

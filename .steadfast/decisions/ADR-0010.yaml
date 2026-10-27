@@ -11,5 +11,5 @@ decision: The pre-commit hook validates the index, and refuses when governed fil
 why:
   - A hook that reads only the working tree can approve a different commit.
 enforced_by: test/hook.test.ts
-verified_by: h1:c8374de6ae1e59376adf73960cc3a8b0c04ce2cddb94f9c42fa00548afb1dc5a
+verified_by: h1:2ab93e971f8997af3fed36b0faa22e300ccb87944b12ef22bd0f29fc3aedac7a
 by: agent

@@ -18,9 +18,9 @@ import { safeFile } from "../core/paths.js";
 import { installedSkillTargets, readCanonicalSkill } from "../core/skill.js";
 import { loadProject } from "../core/store.js";
 import { estimateTokens, recordTokens } from "../core/tokens.js";
-import { validateDecision } from "../core/validate.js";
+import { validateConfig, validateDecision } from "../core/validate.js";
 import { paint, write, writeError } from "../output.js";
-import type { Decision, Issue } from "../types.js";
+import type { Config, Decision, Issue } from "../types.js";
 import { resolveExistingRoot } from "./shared.js";
 
 const DEBT_TRIGGERS: RegExp[] = [
@@ -44,6 +44,35 @@ const DAY_MS = 86_400_000;
 
 function isScratch(path: string): boolean {
   return path.split("/").some((part) => part.startsWith("_"));
+}
+
+/**
+ * `retire` records itself by adding a glob to `retired_docs`. That config edit
+ * must not demand a second decision record; any other config change still
+ * counts as decision debt.
+ */
+function isRetirementOnlyConfigChange(
+  root: string,
+  ref: string,
+  current: Config,
+): boolean {
+  const text = fileAtRef(root, ref, ".steadfast/config.yaml");
+  if (text === undefined) return false;
+  try {
+    const previous = validateConfig(parse(text), ".steadfast/config.yaml").value;
+    const previousRest = { ...previous, retired_docs: [] };
+    const currentRest = { ...current, retired_docs: [] };
+    if (JSON.stringify(previousRest) !== JSON.stringify(currentRest)) return false;
+
+    // Only additions are self-documenting retirements. Removing a retired glob
+    // is an un-retire and must demand a decision record.
+    return (
+      current.retired_docs.length > previous.retired_docs.length &&
+      previous.retired_docs.every((glob) => current.retired_docs.includes(glob))
+    );
+  } catch {
+    return false;
+  }
 }
 
 function canonical(decision: Decision): string {
@@ -426,7 +455,14 @@ export async function checkCommand(argv: string[]): Promise<number> {
           ]),
         ),
       ];
-      const triggers = changed.filter((path) => DEBT_TRIGGERS.some((pattern) => pattern.test(path)));
+      const retirementOnlyConfig =
+        changed.includes(".steadfast/config.yaml") &&
+        isRetirementOnlyConfigChange(root, ref, loaded.config);
+      const triggers = changed.filter(
+        (path) =>
+          DEBT_TRIGGERS.some((pattern) => pattern.test(path)) &&
+          !(path === ".steadfast/config.yaml" && retirementOnlyConfig),
+      );
       const decisionsChanged = changed.some(
         (path) => DECISION_FILE.test(path) && !isScratch(path),
       );

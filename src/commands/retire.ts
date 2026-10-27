@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import {
   existsSync,
   lstatSync,
@@ -10,6 +11,7 @@ import {
 import { extname, join } from "node:path";
 import { parseArgs } from "node:util";
 import { parse, stringify } from "yaml";
+import { gitRoot } from "../core/git.js";
 import { normalizePath } from "../core/glob.js";
 import { insideRoot } from "../core/paths.js";
 import { estimateTokens } from "../core/tokens.js";
@@ -76,6 +78,50 @@ function planPath(root: string, value: string): Plan | string {
   };
 }
 
+function runGitLiteral(root: string, args: string[]): string | undefined {
+  try {
+    return execFileSync("git", args, {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      env: { ...process.env, GIT_LITERAL_PATHSPECS: "1" },
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+type StageResult = {
+  status: "staged" | "skipped" | "failed";
+  deletions: number;
+};
+
+/**
+ * A retired tracked document stays in the git index until its deletion is
+ * staged, so `check` would still see it. Stage the deletion and the config
+ * update together; outside git there is nothing to stage.
+ */
+function stageRetirement(
+  root: string,
+  paths: string[],
+  configPath: string,
+): StageResult {
+  if (gitRoot(root) === undefined) return { status: "skipped", deletions: 0 };
+
+  // Stage only tracked deletions. Untracked or ignored docs need no index
+  // entry, and passing them to git add would fail the whole invocation.
+  const deletedRaw = runGitLiteral(root, ["ls-files", "--deleted", "-z", "--", ...paths]);
+  if (deletedRaw === undefined) return { status: "failed", deletions: 0 };
+  const deleted = deletedRaw.split("\0").filter(Boolean);
+  if (deleted.length > 0 && runGitLiteral(root, ["add", "-A", "--", ...deleted]) === undefined) {
+    return { status: "failed", deletions: deleted.length };
+  }
+
+  return runGitLiteral(root, ["add", "-A", "--", configPath]) === undefined
+    ? { status: "failed", deletions: deleted.length }
+    : { status: "staged", deletions: deleted.length };
+}
+
 export async function retireCommand(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -95,6 +141,7 @@ export async function retireCommand(argv: string[]): Promise<number> {
     write("  Dry-run by default. --apply deletes the files and records");
     write("  the globs in .steadfast/config.yaml as retired_docs, so check");
     write("  fails if they reappear. Git history is the archive.");
+    write("  In a git worktree, --apply also stages the deletion and config.");
     return 0;
   }
 
@@ -161,10 +208,27 @@ export async function retireCommand(argv: string[]): Promise<number> {
     rmSync(plan.absolute, { recursive: true, force: true });
   }
 
+  const staging = stageRetirement(
+    root,
+    plans.map((plan) => plan.input),
+    ".steadfast/config.yaml",
+  );
+
   write("");
   write(`${paint.green("retired")} ${totalFiles} files, ~${totalTokens} tokens`);
   write("  .steadfast/config.yaml");
+  if (staging.status === "staged") {
+    write(
+      staging.deletions > 0
+        ? "  staged: documentation deletion and .steadfast/config.yaml"
+        : "  staged: .steadfast/config.yaml",
+    );
+  } else if (staging.status === "failed") {
+    writeError(
+      "warning: could not stage the retirement; run git add -A -- <paths> .steadfast/config.yaml",
+    );
+  }
   write(`  recover: git log -- ${plans.map((plan) => plan.input).join(" ")}`);
   write("next: steadfast check --strict");
-  return 0;
+  return staging.status === "failed" ? 1 : 0;
 }

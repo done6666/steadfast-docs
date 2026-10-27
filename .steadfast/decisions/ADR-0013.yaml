@@ -1,0 +1,14 @@
+id: ADR-0013
+topic: retire-staging
+scope: global
+status: active
+created: 2026-10-27
+applies_to:
+  - src/commands/retire.ts
+  - test/retire.test.ts
+decision: retire --apply stages the document deletion and config update in a git worktree.
+why:
+  - An unstaged deletion remains in the index, so check still sees the retired document.
+enforced_by: test/retire.test.ts
+verified_by: h1:3927b64ccc0d259fddc3d3ad1f147ac681d81583479ffed7764223239282d418
+by: agent
