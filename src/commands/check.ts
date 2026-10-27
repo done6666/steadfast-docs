@@ -15,6 +15,7 @@ import { matchesAny } from "../core/glob.js";
 import type { Change } from "../core/git.js";
 import { buildGraph } from "../core/graph.js";
 import { safeFile } from "../core/paths.js";
+import { loadRoadmap } from "../core/roadmap.js";
 import { installedSkillTargets, readCanonicalSkill } from "../core/skill.js";
 import { loadProject } from "../core/store.js";
 import { estimateTokens, recordTokens } from "../core/tokens.js";
@@ -129,6 +130,9 @@ export async function checkCommand(argv: string[]): Promise<number> {
   const graph = buildGraph(loaded.decisions, loaded.files);
   const issues: Issue[] = [...loaded.issues, ...graph.issues];
   const index = new FileIndex(root);
+  const roadmap = loadRoadmap(root, new Set(loaded.decisions.map((decision) => decision.id)));
+  issues.push(...roadmap.issues);
+  const roadmapCurrent = roadmap.roadmap?.steps.find((step) => step.status === "current");
 
   for (const glob of loaded.config.retired_docs) {
     const matches = index.matching([glob]);
@@ -591,6 +595,8 @@ export async function checkCommand(argv: string[]): Promise<number> {
             ...counts,
             invariants: loaded.invariants.length,
             memory_tokens: memoryTokens,
+            roadmap_steps: roadmap.roadmap?.steps.length ?? 0,
+            roadmap_current: roadmapCurrent?.id ?? null,
             errors: errors.length,
             warnings: warnings.length,
           },
@@ -615,8 +621,12 @@ export async function checkCommand(argv: string[]): Promise<number> {
 
   if (sorted.length > 0) write("");
 
+  const roadmapSummary =
+    roadmap.roadmap === undefined
+      ? ""
+      : ` | roadmap ${roadmap.roadmap.steps.length} steps${roadmapCurrent === undefined ? "" : `, current ${roadmapCurrent.id}`}`;
   write(
-    `${paint.bold("steadfast check")} | ${counts.active} active, ${counts.superseded} superseded, ${counts.rejected} rejected, ${counts.retired} retired, ${counts.draft} draft | ${loaded.invariants.length} invariants | ${memoryTokens} memory tokens`,
+    `${paint.bold("steadfast check")} | ${counts.active} active, ${counts.superseded} superseded, ${counts.rejected} rejected, ${counts.retired} retired, ${counts.draft} draft | ${loaded.invariants.length} invariants | ${memoryTokens} memory tokens${roadmapSummary}`,
   );
   const summary = `${errors.length} errors, ${warnings.length} warnings`;
   write(failed ? paint.red(summary) : paint.green(summary));

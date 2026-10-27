@@ -24,6 +24,7 @@ export const CONFIG_FIELDS = ["version", "budgets", "advisory_ttl_days", "retire
 export const CONFIG_BUDGET_FIELDS = [
   "context_tokens",
   "decision_tokens",
+  "brief_tokens",
   "invariants",
   "guards",
 ] as const;
@@ -38,6 +39,7 @@ const STATUSES: readonly Status[] = ["active", "rejected", "retired", "draft"];
 export const BUDGET_BOUNDS: Record<keyof Budgets, readonly [number, number]> = {
   context_tokens: [200, 50_000],
   decision_tokens: [40, 1_000],
+  brief_tokens: [120, 2_000],
   invariants: [1, 25],
   guards: [1, 100],
 };
@@ -55,6 +57,7 @@ export const DEFAULT_CONFIG: Config = {
   budgets: {
     context_tokens: 1500,
     decision_tokens: 160,
+    brief_tokens: 300,
     invariants: 25,
     guards: 30,
   },

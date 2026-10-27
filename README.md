@@ -6,7 +6,7 @@ Documentation that only agents read. Humans ask; agents remember; CI keeps the m
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-137-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-155-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
@@ -73,7 +73,7 @@ The agent plans the paths, calls `context`, reads only the pack, implements, run
 | OpenCode | `.opencode/opencode.json` (`mcp.servers.steadfast`) | `steadfast_*` |
 | Claude Code | `.mcp.json` (`mcpServers.steadfast`) | `mcp__steadfast__*` |
 
-The server exposes `context`, `check`, `verify`, `new`, `explain`, `supersede` and `doctor`. It is a JSON-RPC wrapper over the same CLI, so there is one implementation and two entry points. `--print` shows the config without writing it; `--check` verifies an existing install.
+The server exposes `brief`, `context`, `check`, `verify`, `new`, `explain`, `supersede` and `doctor`. It is a JSON-RPC wrapper over the same CLI, so there is one implementation and two entry points. `--print` shows the config without writing it; `--check` verifies an existing install.
 
 `hook install` adds a managed block to the real git hooks directory (respecting a repo-local `core.hooksPath`, worktrees and submodules) that runs `check --strict --staged --diff HEAD`. `--staged` refuses to validate a working tree that differs from the index, so what the hook approves is what the commit contains. An existing hook is chained as `pre-commit.steadfast-original` (non-shell hooks included), runs before the check, and is restored by `hook remove`. A hooks directory shared outside the repository is refused, because a project-specific hook would run in every repo. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
 
@@ -97,6 +97,29 @@ verified_by: h1:...
 
 About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 
+## What a roadmap looks like
+
+Decisions say what must stay true; the roadmap says what to do next.
+`.steadfast/roadmap.yaml` is mutable execution state, not a second decision store.
+
+```yaml
+version: 1
+updated: 2026-10-27
+steps:
+  - id: STEP-003
+    goal: Add the maintenance cleanup job
+    why: Inactive users keep notification rows forever
+    paths: [apps/worker/src/handlers/**, packages/jobs/src/**]
+    acceptance: pnpm test --filter worker
+    status: current
+    decisions: [ADR-0017]
+```
+
+One step is `current`; `done` requires evidence (a test or commit). `brief`
+compiles a ≤300-token session view — current step, next steps, blockers, recent
+commits, worktrees and memory stats — and stores nothing. The full roadmap is
+never loaded into context.
+
 ## Why it does not rot
 
 - **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`.
@@ -113,6 +136,7 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 | Command | Purpose |
 | --- | --- |
 | `npx steadfast-docs init [--adopt]` | Scaffold `.steadfast/` and the `AGENTS.md` contract |
+| `npx steadfast-docs brief` | Compile the current step, blockers, recent commits and memory stats |
 | `npx steadfast-docs context --for <paths>` | Compile the token-budgeted pack for a task (files, dirs or globs) |
 | `npx steadfast-docs check --strict --diff main` | Validate schema, graph, freshness, paths, budgets and history |
 | `npx steadfast-docs new ...` | Append a decision record |
@@ -138,6 +162,17 @@ About 90 tokens. The 150-line ADR it replaces is closer to 3,000.
 The main six tasks both passed; the win was **~15x less required context**. The seventh task was non-inferable: the docs put the refund cap in the nightly reporting job, the pack put it in the API. The baseline failed; the pack passed with the docs present and after `retire` deleted them. Staleness, duplicate topics and edited history were detected deterministically, while the legacy docs carried four undetected contradictions.
 
 [Full pilot report →](https://github.com/done6666/steadfast-docs/blob/main/benchmarks/pilot/RESULTS.md)
+
+### Real-project pilot
+
+A second pilot migrated the job architecture of a production-shaped monorepo
+from one 3.2k-token document into 18 decisions and 4 invariants on a side
+branch. Task packs ranged from 149 to 608 tokens; five contract tasks used about
+1.7k tokens total against about 8.9k for the document baseline (~5x). The legacy
+document was retired after migration. Five of the 18 rules stayed advisory, and
+converting prose into decisions was the slow part. One project, one trial per
+task: this is evidence that the loop works outside a synthetic fixture, not a
+statistical result. [Pilot notes →](benchmarks/real-01/README.md)
 
 ## Adopting an existing repo
 
@@ -168,7 +203,7 @@ npx steadfast-docs retire legacy-docs --apply
 
 **What if the agent ignores the contract?** The commit or PR fails `check --strict` for memory violations (edited history, stale fingerprints, budgets, retired docs). A code-level rule is only as strong as the `enforced_by` test or linter behind it.
 
-**Is it production-ready?** The protocol and CLI are covered by 137 tests, but the pilot is synthetic. Start with a non-critical repo.
+**Is it production-ready?** The protocol and CLI are covered by tests, and one real project has completed the migration. That is still a small sample. Start with a non-critical repo.
 
 ## Development
 
@@ -186,7 +221,7 @@ node dist/src/cli.js check --strict
 ## Status
 
 0.3.0 published. The agent-native slice is complete: `init`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
-Next: task-scope contracts (`start` / `check` / `end`) and a real-project pilot.
+Unreleased: `brief` and the roadmap layer. A real-project pilot has completed; next is rollout and task-scope contracts (`start` / `check` / `end`).
 
 ## License
 

@@ -10,5 +10,5 @@ decision: A config change that only updates retired_docs is not decision debt.
 why:
   - retire records the retirement itself; a second record would be noise.
 enforced_by: test/retire.test.ts
-verified_by: h1:196dc79bf346e811aa5d413347900cf071f3eb2a0155db8b85a753a0040c243b
+verified_by: h1:0038af7ecd1a164af36d7089cc7be447e152a58bc20eea1b46585c3f6f6348f9
 by: agent

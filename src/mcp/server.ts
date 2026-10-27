@@ -106,6 +106,19 @@ function contextTool(args: Record<string, unknown>): ToolResult {
   }
 }
 
+function briefTool(args: Record<string, unknown>): ToolResult {
+  const cliArgs = ["brief", "--json"];
+  if (typeof args.budget === "number") cliArgs.push("--budget", String(args.budget));
+  const result = runCli(cliArgs);
+  if (result.status !== 0) return failure(result);
+  try {
+    const parsed = JSON.parse(result.stdout) as { text?: string };
+    return { text: parsed.text ?? result.stdout, isError: false };
+  } catch {
+    return { text: result.stdout, isError: false };
+  }
+}
+
 function checkTool(args: Record<string, unknown>): ToolResult {
   const cliArgs = ["check", "--json"];
   if (typeof args.diff === "string") cliArgs.push("--diff", args.diff);
@@ -205,6 +218,22 @@ function doctorTool(): ToolResult {
 }
 
 const TOOLS = [
+  {
+    name: "brief",
+    description:
+      "Print the current roadmap step, next steps, blockers, recent commits, worktrees and memory stats. Run at the start of a session. This is state, not rules; use context for the paths you will touch.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        budget: {
+          type: "integer",
+          minimum: 120,
+          description: "Lower budgets.brief_tokens for this run; it cannot raise the cap.",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
   {
     name: "context",
     description:
@@ -317,6 +346,8 @@ const TOOLS = [
 
 function callTool(name: string, args: Record<string, unknown>): ToolResult {
   switch (name) {
+    case "brief":
+      return briefTool(args);
     case "context":
       return contextTool(args);
     case "check":
@@ -369,7 +400,7 @@ function handle(request: JsonRpcRequest): void {
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "steadfast", version: VERSION },
       instructions:
-        "Steadfast memory is available. Before editing, call context with the paths you will touch and read only that output. Call check and verify before finishing. Never edit an active record; append a successor with supersede.",
+        "Steadfast memory is available. At session start, call brief to recover the current roadmap step and recent work. Before editing, call context with the paths you will touch and read only that output. Call check and verify before finishing. Never edit an active record; append a successor with supersede.",
     });
     return;
   }

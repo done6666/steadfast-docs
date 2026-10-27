@@ -34,6 +34,7 @@ export interface Invariant {
 export interface Budgets {
   context_tokens: number;
   decision_tokens: number;
+  brief_tokens: number;
   invariants: number;
   guards: number;
 }
@@ -63,4 +64,24 @@ export interface Loaded {
   decisions: Decision[];
   files: Map<string, string>;
   issues: Issue[];
+}
+
+export type StepStatus = "todo" | "current" | "blocked" | "done" | "dropped";
+
+export interface Step {
+  id: string;
+  goal: string;
+  why: string;
+  paths: string[];
+  acceptance: string;
+  status: StepStatus;
+  evidence?: string;
+  blocked_by?: string;
+  decisions?: string[];
+}
+
+export interface Roadmap {
+  version: 1;
+  updated?: string;
+  steps: Step[];
 }

@@ -12,5 +12,5 @@ decision: Context packs expand selectors and fail instead of returning a partial
 why:
   - A directory-blind or truncated pack silently drops rules.
 enforced_by: test/context.test.ts
-verified_by: h1:f62bba936774b67b545da702260a0513c25e81cdff631e80855e4af29889d5a0
+verified_by: h1:6e985fbcb0ae438ec128355108bfc9bf8d3f03ca8048d9e969ec85ea044ea02f
 by: agent

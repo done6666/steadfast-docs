@@ -13,6 +13,7 @@
       "properties": {
         "context_tokens": { "type": "integer", "minimum": 200, "maximum": 50000 },
         "decision_tokens": { "type": "integer", "minimum": 40, "maximum": 1000 },
+        "brief_tokens": { "type": "integer", "minimum": 120, "maximum": 2000 },
         "invariants": { "type": "integer", "minimum": 1, "maximum": 25 },
         "guards": { "type": "integer", "minimum": 1, "maximum": 100 }
       }

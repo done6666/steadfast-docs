@@ -24,7 +24,7 @@ test("the canonical skill respects its budget", () => {
   assert.match(text, /^---\nname: steadfast\ndescription: .+\n---/);
   assert.match(text, /execute tests/);
   assert.match(text, /omitted/);
-  for (const command of ["context", "check", "new", "verify"]) {
+  for (const command of ["brief", "context", "check", "new", "verify"]) {
     assert.ok(text.includes(`steadfast-docs ${command}`), `missing ${command}`);
   }
   assert.equal(text.includes("npx steadfast "), false);

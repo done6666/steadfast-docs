@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steadfast.dev/schema/roadmap.schema.json",
+  "title": "Steadfast roadmap",
+  "description": "Mutable execution state. One current step, a bounded list of steps, and evidence for completed work. Decisions stay in .steadfast/decisions/ and remain append-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "steps"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "steps": { "minItems": 1 } },
+        "required": ["steps"]
+      },
+      "then": { "required": ["updated"] }
+    }
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "updated": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Date the current step last moved. Required when steps is not empty."
+    },
+    "steps": {
+      "type": "array",
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "goal", "why", "paths", "acceptance", "status"],
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "done" } }, "required": ["status"] },
+          "then": { "required": ["evidence"] }
+        },
+        {
+          "if": { "properties": { "status": { "const": "blocked" } }, "required": ["status"] },
+          "then": { "required": ["blocked_by"] }
+        }
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^STEP-[0-9]{3,}$", "maxLength": 32 },
+        "goal": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "\\S" },
+        "why": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!.*\\.\\.)(?!/)(?=.*\\S).+$"
+          }
+        },
+        "acceptance": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" },
+        "status": { "enum": ["todo", "current", "blocked", "done", "dropped"] },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S",
+          "description": "Test path, commit, or command that proves a done step. check rejects placeholder values."
+        },
+        "blocked_by": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "\\S",
+          "description": "A STEP id, or the reason the step cannot move."
+        },
+        "decisions": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "type": "string", "pattern": "^ADR-[0-9]{4,}$", "maxLength": 32 }
+        }
+      }
+    }
+  }
+}

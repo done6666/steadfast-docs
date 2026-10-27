@@ -13,5 +13,5 @@ decision: The MCP server wraps the CLI, so every command has one implementation 
 why:
   - A second implementation would drift and double the test burden.
 enforced_by: test/mcp.test.ts
-verified_by: h1:a98f3be0109b0605f5206bec8bb4b8bfd2aa345c7866f7b26e47b9d4b92519ff
+verified_by: h1:7d5394c8bbc71c4dd5d7430e98fc1a31b2f13ff7114a719e34ab02d23ec77f65
 by: agent

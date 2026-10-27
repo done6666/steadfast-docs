@@ -9,5 +9,5 @@ decision: Decision records are YAML; Markdown is reserved for agent contracts an
 why:
   - Prose budgets cannot be enforced; data can.
 enforced_by: test/validate.test.ts
-verified_by: h1:b6bfc9a5982eabfe6984309abee2e511b02fab051ddc1772aa9620adb260a60c
+verified_by: h1:bf36f0dd0c7bc43c857fe2d529645fc34aa1c70112e033e937c5d9490361c1fc
 by: agent

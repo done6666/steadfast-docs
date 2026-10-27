@@ -1,0 +1,19 @@
+id: ADR-0016
+topic: execution-state
+scope: global
+status: active
+created: 2026-10-27
+applies_to:
+  - src/core/roadmap.ts
+  - src/commands/brief.ts
+  - src/commands/context.ts
+  - src/core/pack.ts
+  - src/core/validate.ts
+  - test/roadmap.test.ts
+  - schema/roadmap.schema.json
+decision: Execution state lives in a mutable, token-budgeted roadmap; decisions stay append-only and context never loads the roadmap.
+why:
+  - Session handoff needs a current step, but a second normative store would drift.
+enforced_by: test/roadmap.test.ts
+verified_by: h1:6d07f7f05e55d7f1bab26e3a8380de8a36dbb6897ffe58d4f6cae02dde2fc43d
+by: agent

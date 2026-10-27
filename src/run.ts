@@ -1,3 +1,4 @@
+import { briefCommand } from "./commands/brief.js";
 import { checkCommand } from "./commands/check.js";
 import { contextCommand } from "./commands/context.js";
 import { doctorCommand } from "./commands/doctor.js";
@@ -19,6 +20,7 @@ function printHelp(): void {
   write("Usage: steadfast <command> [options]");
   write("");
   write("  init       scaffold .steadfast/ and the AGENTS.md contract");
+  write("  brief      print the current roadmap step, recent work and memory stats");
   write("  context    compile a token-budgeted memory pack for paths or a scope");
   write("  check      validate the memory graph, freshness, paths and budgets");
   write("  new        append a decision record");
@@ -46,6 +48,8 @@ export async function run(argv: string[]): Promise<number> {
   switch (command) {
     case "init":
       return initCommand(rest);
+    case "brief":
+      return briefCommand(rest);
     case "new":
       return newCommand(rest);
     case "explain":

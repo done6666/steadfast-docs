@@ -6,6 +6,7 @@ import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { buildGraph } from "../core/graph.js";
 import { safeFile } from "../core/paths.js";
+import { loadRoadmap } from "../core/roadmap.js";
 import { installedSkillTargets, readCanonicalSkill } from "../core/skill.js";
 import { loadProject } from "../core/store.js";
 import { paint, write, writeError } from "../output.js";
@@ -217,6 +218,31 @@ export async function doctorCommand(argv: string[]): Promise<number> {
       : `${advisory.length} advisory rule(s): ${advisory.map((decision) => decision.id).join(", ")}`,
     advisory.length === 0 ? undefined : "add enforced_by, or supersede the rule",
   );
+
+  const roadmap = loadRoadmap(root, new Set(loaded.decisions.map((decision) => decision.id)));
+  const roadmapErrors = roadmap.issues.filter((issue) => issue.severity === "error").length;
+  const roadmapCurrent = roadmap.roadmap?.steps.find((step) => step.status === "current");
+  const roadmapTodo = roadmap.roadmap?.steps.filter((step) => step.status === "todo").length ?? 0;
+  if (roadmapErrors > 0) {
+    add("error", "roadmap", `roadmap has ${roadmapErrors} error(s)`, "run: steadfast check");
+  } else if (roadmap.roadmap === undefined) {
+    add("ok", "roadmap", "roadmap: not configured");
+  } else if (roadmapCurrent === undefined && roadmapTodo > 0) {
+    add(
+      "warn",
+      "roadmap",
+      `roadmap: no current step (${roadmapTodo} todo)`,
+      "set one step to status: current in .steadfast/roadmap.yaml",
+    );
+  } else {
+    add(
+      "ok",
+      "roadmap",
+      roadmapCurrent === undefined
+        ? "roadmap: no open steps"
+        : `roadmap: ${roadmapCurrent.id} ${roadmapCurrent.goal}`,
+    );
+  }
 
   const errors = checks.filter((check) => check.status === "error");
   const warnings = checks.filter((check) => check.status === "warn");

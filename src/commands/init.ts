@@ -15,6 +15,7 @@ const AGENTS_BLOCK = `${BEGIN}
 If the steadfast MCP server is connected, call \`steadfast_context\` (OpenCode) or \`mcp__steadfast__context\` (Claude) with the paths you will touch; otherwise run \`npx steadfast-docs context --for <paths>\`. Use only that output for context.
 If context fails, narrow the paths or ask the human before raising the budget; do not pass \`--allow-partial\`.
 Records are not reading material: do not load other records, legacy docs or architecture notes. The pack is the only context.
+At session start, run \`npx steadfast-docs brief\` to recover the current roadmap step. Update \`.steadfast/roadmap.yaml\` when a step starts or finishes.
 After a new record, fill the record you just created. Never edit an active record; supersede it.
 
 Before committing, call the steadfast \`check\` tool, or run \`npx steadfast-docs check\`.
@@ -121,6 +122,7 @@ function scan(root: string): Record<string, unknown> {
     budgets: DEFAULT_CONFIG.budgets,
     next: [
       "Write 8-25 invariants to .steadfast/invariants.yaml. One sentence each; if it needs a paragraph it is a decision.",
+      "Plan the first roadmap step in .steadfast/roadmap.yaml; run: steadfast brief.",
       "Append one decision per non-obvious choice. Give each an enforced_by test or command.",
       "Rules without enforced_by are advisory and expire.",
       "Run: steadfast check --strict",
@@ -167,6 +169,14 @@ export async function initCommand(argv: string[]): Promise<number> {
     writeFileSync(invariantsPath, "# Max 25 rules. One sentence each.\n# Changing an invariant requires a decision record.\n[]\n");
   }
 
+  const roadmapPath = join(base, "roadmap.yaml");
+  if (!existsSync(roadmapPath)) {
+    writeFileSync(
+      roadmapPath,
+      "# Execution state: mutable. One current step. Decisions stay in .steadfast/decisions/.\nversion: 1\nsteps: []\n",
+    );
+  }
+
   const contract = ensureAgentsContract(root);
   if (contract === "malformed") {
     writeError("warning: AGENTS.md has malformed steadfast markers; left untouched");
@@ -180,6 +190,7 @@ export async function initCommand(argv: string[]): Promise<number> {
   write(`${paint.green("initialized")} ${root}`);
   write("  .steadfast/config.yaml");
   write("  .steadfast/invariants.yaml");
+  write("  .steadfast/roadmap.yaml");
   write("  .steadfast/decisions/");
   write("  AGENTS.md");
   write("");

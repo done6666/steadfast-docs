@@ -60,6 +60,12 @@ test("mcp exposes the memory tools over stdio", () => {
       method: "tools/call",
       params: { name: "doctor", arguments: {} },
     },
+    {
+      jsonrpc: "2.0",
+      id: 7,
+      method: "tools/call",
+      params: { name: "brief", arguments: {} },
+    },
   ];
 
   const input = [
@@ -86,7 +92,7 @@ test("mcp exposes the memory tools over stdio", () => {
     });
   const byId = new Map(messages.map((message) => [message.id, message.result]));
 
-  assert.equal(messages.length, 7);
+  assert.equal(messages.length, 8);
   assert.equal(byId.get(null as any), undefined);
   const invalid = messages.find((message) => message.id === null);
   assert.equal(invalid?.error?.code, -32600);
@@ -99,7 +105,7 @@ test("mcp exposes the memory tools over stdio", () => {
   }>;
   assert.deepEqual(
     tools.map((tool) => tool.name).sort(),
-    ["check", "context", "doctor", "explain", "new", "supersede", "verify"],
+    ["brief", "check", "context", "doctor", "explain", "new", "supersede", "verify"],
   );
   const verify = tools.find((tool) => tool.name === "verify");
   assert.equal("trust" in (verify?.inputSchema.properties ?? {}), false);
@@ -109,6 +115,7 @@ test("mcp exposes the memory tools over stdio", () => {
   assert.equal(JSON.parse(byId.get(4).content[0].text).id, "ADR-0001");
   assert.equal(JSON.parse(byId.get(5).content[0].text).ok, true);
   assert.equal(JSON.parse(byId.get(6).content[0].text).ok, true);
+  assert.match(byId.get(7).content[0].text, /^# steadfast brief v1/);
 });
 
 test("mcp context forwards strict, allowPartial and the repo root", () => {

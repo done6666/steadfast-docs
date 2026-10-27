@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { ROADMAP_FIELDS, STEP_FIELDS } from "../src/core/roadmap.js";
 import {
   CONFIG_BUDGET_FIELDS,
   CONFIG_FIELDS,
@@ -177,5 +178,29 @@ test("json schemas stay in sync with the validator", () => {
     properties: Record<string, unknown>;
   };
   assert.deepEqual(Object.keys(config.properties).sort(), [...CONFIG_FIELDS].sort());
-  assert.ok(CONFIG_BUDGET_FIELDS.length === 4);
+  assert.ok(CONFIG_BUDGET_FIELDS.length === 5);
+
+  const roadmap = JSON.parse(
+    readFileSync(join(schemaDir, "roadmap.schema.json"), "utf8"),
+  ) as {
+    allOf: unknown[];
+    properties: Record<string, unknown>;
+    $defs: {
+      step: {
+        allOf: unknown[];
+        properties: {
+          id: { maxLength?: number };
+          paths: { items: { pattern?: string } };
+          decisions: { items: { maxLength?: number } };
+        };
+      };
+    };
+  };
+  assert.deepEqual(Object.keys(roadmap.properties).sort(), [...ROADMAP_FIELDS].sort());
+  assert.deepEqual(Object.keys(roadmap.$defs.step.properties).sort(), [...STEP_FIELDS].sort());
+  assert.equal(roadmap.allOf.length, 1);
+  assert.equal(roadmap.$defs.step.allOf.length, 2);
+  assert.equal(roadmap.$defs.step.properties.id.maxLength, 32);
+  assert.equal(roadmap.$defs.step.properties.decisions.items.maxLength, 32);
+  assert.ok(roadmap.$defs.step.properties.paths.items.pattern?.includes("\\."));
 });
