@@ -185,7 +185,7 @@ node dist/src/cli.js check --strict
 
 ## Status
 
-0.2.1 published. The agent-native slice is complete: `init`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
+0.3.0 published. The agent-native slice is complete: `init`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
 Next: task-scope contracts (`start` / `check` / `end`) and a real-project pilot.
 
 ## License
