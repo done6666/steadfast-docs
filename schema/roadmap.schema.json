@@ -79,6 +79,11 @@
           "type": "array",
           "maxItems": 8,
           "items": { "type": "string", "pattern": "^ADR-[0-9]{4,}$", "maxLength": 32 }
+        },
+        "findings": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "type": "string", "pattern": "^FIND-[0-9]{4,}$", "maxLength": 32 }
         }
       }
     }

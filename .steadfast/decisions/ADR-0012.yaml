@@ -11,5 +11,5 @@ decision: Context may only lower its token budget; raising budgets.context_token
 why:
   - A local --budget or MCP override would bypass the fail-closed gate without a trace.
 enforced_by: test/context.test.ts
-verified_by: h1:3e6f754ee82a126a6d0ced564a46652cb4290efb8cc3b668b1ece99e21f36a6f
+verified_by: h1:99fb5099641d77ccb7c4933c62e6eb099591b409e49e43d6f9201bd12eef83f3
 by: agent

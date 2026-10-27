@@ -9,5 +9,5 @@ decision: Context packs are compiled on demand and never committed.
 why:
   - A committed copy reintroduces the staleness problem.
 enforced_by: test/pack.test.ts
-verified_by: h1:e80f10db95458f696f085d2279c076cd1593408ac0990a3af16d6434d9cfe4d4
+verified_by: h1:5774d1cec08a26755ed9746614804ef994680c2dfeda1a28c89a81838f646f23
 by: agent

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://steadfast.dev/schema/finding.schema.json",
+  "title": "Steadfast finding",
+  "description": "One append-only observation about a versioned target. Findings are not rules; retire a finding when a test or script proves it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "topic",
+    "scope",
+    "status",
+    "target",
+    "claim",
+    "evidence",
+    "confidence",
+    "observed_at",
+    "applies_to"
+  ],
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "retracted" } }, "required": ["status"] },
+      "then": {
+        "required": ["why"],
+        "properties": { "why": { "minItems": 1 } }
+      }
+    }
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^FIND-[0-9]{4,}$", "maxLength": 32 },
+    "topic": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 48
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 32
+    },
+    "status": { "enum": ["active", "retracted", "retired"] },
+    "target": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "\\S",
+      "description": "Artifact and version observed, for example game-client@1.2.3."
+    },
+    "claim": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "\\S",
+      "description": "One fact. Not a rule, not a narrative."
+    },
+    "evidence": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^(?:!.*\\S.*|(?=.*\\S)(?!.*\\.\\.)(?!/).+)$",
+      "description": "Repo-relative script/log, or a command prefixed with '!'. check rejects path escapes and whitespace."
+    },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "observed_at": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "applies_to": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^(?!.*\\.\\.)(?!/)(?=.*\\S).+$"
+      }
+    },
+    "why": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "\\S" }
+    },
+    "supersedes": {
+      "type": "array",
+      "maxItems": 8,
+      "items": { "type": "string", "pattern": "^FIND-[0-9]{4,}$", "maxLength": 32 }
+    },
+    "by": { "enum": ["agent", "human"] }
+  }
+}

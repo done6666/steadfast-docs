@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { FINDING_FIELDS } from "../src/core/finding.js";
 import { ROADMAP_FIELDS, STEP_FIELDS } from "../src/core/roadmap.js";
 import {
   CONFIG_BUDGET_FIELDS,
@@ -178,7 +179,7 @@ test("json schemas stay in sync with the validator", () => {
     properties: Record<string, unknown>;
   };
   assert.deepEqual(Object.keys(config.properties).sort(), [...CONFIG_FIELDS].sort());
-  assert.ok(CONFIG_BUDGET_FIELDS.length === 5);
+  assert.ok(CONFIG_BUDGET_FIELDS.length === 6);
 
   const roadmap = JSON.parse(
     readFileSync(join(schemaDir, "roadmap.schema.json"), "utf8"),
@@ -203,4 +204,13 @@ test("json schemas stay in sync with the validator", () => {
   assert.equal(roadmap.$defs.step.properties.id.maxLength, 32);
   assert.equal(roadmap.$defs.step.properties.decisions.items.maxLength, 32);
   assert.ok(roadmap.$defs.step.properties.paths.items.pattern?.includes("\\."));
+
+  const finding = JSON.parse(
+    readFileSync(join(schemaDir, "finding.schema.json"), "utf8"),
+  ) as {
+    allOf: unknown[];
+    properties: Record<string, unknown>;
+  };
+  assert.deepEqual(Object.keys(finding.properties).sort(), [...FINDING_FIELDS].sort());
+  assert.equal(finding.allOf.length, 1);
 });

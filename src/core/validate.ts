@@ -20,11 +20,18 @@ export const DECISION_FIELDS = [
 
 export const GUARD_FIELDS = ["deny", "instead", "check"] as const;
 export const INVARIANT_FIELDS = ["id", "rule", "applies_to", "enforced_by"] as const;
-export const CONFIG_FIELDS = ["version", "budgets", "advisory_ttl_days", "retired_docs"] as const;
+export const CONFIG_FIELDS = [
+  "version",
+  "budgets",
+  "advisory_ttl_days",
+  "findings_ttl_days",
+  "retired_docs",
+] as const;
 export const CONFIG_BUDGET_FIELDS = [
   "context_tokens",
   "decision_tokens",
   "brief_tokens",
+  "finding_tokens",
   "invariants",
   "guards",
 ] as const;
@@ -40,6 +47,7 @@ export const BUDGET_BOUNDS: Record<keyof Budgets, readonly [number, number]> = {
   context_tokens: [200, 50_000],
   decision_tokens: [40, 1_000],
   brief_tokens: [120, 2_000],
+  finding_tokens: [60, 400],
   invariants: [1, 25],
   guards: [1, 100],
 };
@@ -58,10 +66,12 @@ export const DEFAULT_CONFIG: Config = {
     context_tokens: 1500,
     decision_tokens: 160,
     brief_tokens: 300,
+    finding_tokens: 120,
     invariants: 25,
     guards: 30,
   },
   advisory_ttl_days: 90,
+  findings_ttl_days: 90,
   retired_docs: [],
 };
 
@@ -545,6 +555,7 @@ export function validateConfig(raw: unknown, file: string): { value: Config; iss
     version: 1,
     budgets: { ...DEFAULT_CONFIG.budgets },
     advisory_ttl_days: DEFAULT_CONFIG.advisory_ttl_days,
+    findings_ttl_days: DEFAULT_CONFIG.findings_ttl_days,
     retired_docs: [],
   };
 
@@ -588,6 +599,22 @@ export function validateConfig(raw: unknown, file: string): { value: Config; iss
       );
     } else {
       value.advisory_ttl_days = entry;
+    }
+  }
+
+  if (raw.findings_ttl_days !== undefined) {
+    const entry = raw.findings_ttl_days;
+    if (typeof entry !== "number" || !Number.isInteger(entry) || entry <= 0) {
+      error(issues, "schema/type", `"findings_ttl_days" must be a positive integer`, file);
+    } else if (entry < TTL_BOUNDS[0] || entry > TTL_BOUNDS[1]) {
+      error(
+        issues,
+        "budget/range",
+        `"findings_ttl_days" must be between ${TTL_BOUNDS[0]} and ${TTL_BOUNDS[1]}`,
+        file,
+      );
+    } else {
+      value.findings_ttl_days = entry;
     }
   }
 

@@ -11,5 +11,5 @@ decision: Legacy documentation is deleted after migration; check fails if a reti
 why:
   - The pack is the only context; stale docs are the drift this replaces.
 enforced_by: test/retire.test.ts
-verified_by: h1:16bf1558561623286125cd66df74a7a275668dae50721fc0dc7c31a7d19233b7
+verified_by: h1:11cbf5ccd00b71880ac07bcbb3eaefb98523dcd9fef0921ccc026b399cb80006
 by: agent

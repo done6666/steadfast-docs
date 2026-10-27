@@ -3,6 +3,7 @@ import { checkCommand } from "./commands/check.js";
 import { contextCommand } from "./commands/context.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { explainCommand } from "./commands/explain.js";
+import { findingCommand } from "./commands/finding.js";
 import { hookCommand } from "./commands/hook.js";
 import { initCommand } from "./commands/init.js";
 import { mcpCommand } from "./commands/mcp.js";
@@ -24,6 +25,7 @@ function printHelp(): void {
   write("  context    compile a token-budgeted memory pack for paths or a scope");
   write("  check      validate the memory graph, freshness, paths and budgets");
   write("  new        append a decision record");
+  write("  finding    record, retract or retire an observation");
   write("  explain    print one record's metadata");
   write("  supersede  append a successor to an active record");
   write("  verify     recompute freshness fingerprints");
@@ -52,6 +54,8 @@ export async function run(argv: string[]): Promise<number> {
       return briefCommand(rest);
     case "new":
       return newCommand(rest);
+    case "finding":
+      return findingCommand(rest);
     case "explain":
       return explainCommand(rest);
     case "supersede":

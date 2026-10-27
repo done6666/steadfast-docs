@@ -1,6 +1,7 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { buildFindingGraph } from "../core/finding.js";
 import { listRepoFiles } from "../core/fingerprint.js";
 import { matchGlob, normalizePath } from "../core/glob.js";
 import { buildGraph } from "../core/graph.js";
@@ -8,7 +9,7 @@ import { buildPack } from "../core/pack.js";
 import { insideRoot } from "../core/paths.js";
 import { loadProject } from "../core/store.js";
 import { BUDGET_BOUNDS } from "../core/validate.js";
-import type { Decision, ResolvedStatus } from "../types.js";
+import type { Decision, Finding, ResolvedFindingStatus, ResolvedStatus } from "../types.js";
 import { write, writeError } from "../output.js";
 import { resolveExistingRoot } from "./shared.js";
 
@@ -28,6 +29,8 @@ function resolveSelectors(
   values: string[],
   decisions: Decision[],
   resolved: Map<string, ResolvedStatus>,
+  findings: Finding[],
+  resolvedFindings: Map<string, ResolvedFindingStatus>,
 ): Selectors {
   const paths = [
     ...new Set(
@@ -85,8 +88,15 @@ function resolveSelectors(
       const status = resolved.get(decision.id);
       return status === "active" || status === "rejected";
     });
+    const relevantFindings = findings.filter((finding) => {
+      const status = resolvedFindings.get(finding.id);
+      return status === "active" || status === "retracted";
+    });
     const globHits = new Map<string, boolean>();
-    for (const glob of new Set(relevant.flatMap((decision) => decision.applies_to))) {
+    for (const glob of new Set([
+      ...relevant.flatMap((decision) => decision.applies_to),
+      ...relevantFindings.flatMap((finding) => finding.applies_to),
+    ])) {
       const normalized = normalizePath(glob).replace(/\/+/g, "/").replace(/\/+$/, "");
       globHits.set(
         glob,
@@ -95,9 +105,13 @@ function resolveSelectors(
           : coveredSet.has(normalized),
       );
     }
-    const hit = relevant.some((decision) =>
-      decision.applies_to.some((glob) => globHits.get(glob) === true),
-    );
+    const hit =
+      relevant.some((decision) =>
+        decision.applies_to.some((glob) => globHits.get(glob) === true),
+      ) ||
+      relevantFindings.some((finding) =>
+        finding.applies_to.some((glob) => globHits.get(glob) === true),
+      );
     if (!hit) {
       warnings.push(
         expandedFiles === 0 && (isDirectory || /[*?]/.test(selector))
@@ -148,8 +162,9 @@ export async function contextCommand(argv: string[]): Promise<number> {
 
   const loaded = loadProject(root);
   const graph = buildGraph(loaded.decisions, loaded.files);
+  const findingGraph = buildFindingGraph(loaded.findings, loaded.findingFiles);
 
-  const errors = [...loaded.issues, ...graph.issues].filter(
+  const errors = [...loaded.issues, ...graph.issues, ...findingGraph.issues].filter(
     (issue) => issue.severity === "error",
   );
   if (errors.length > 0) {
@@ -192,7 +207,14 @@ export async function contextCommand(argv: string[]): Promise<number> {
     return 2;
   }
 
-  const selectors = resolveSelectors(root, paths, loaded.decisions, graph.resolved);
+  const selectors = resolveSelectors(
+    root,
+    paths,
+    loaded.decisions,
+    graph.resolved,
+    loaded.findings,
+    findingGraph.resolved,
+  );
   const warnings = selectors.warnings.slice(0, 3);
   if (selectors.warnings.length > warnings.length) {
     warnings.push(
@@ -200,14 +222,21 @@ export async function contextCommand(argv: string[]): Promise<number> {
     );
   }
 
-  const pack = buildPack(loaded.decisions, loaded.invariants, graph.resolved, {
-    paths: selectors.paths,
-    matchPaths: selectors.matchPaths,
-    warnings,
-    scope: values.scope,
-    budget,
-    maxGuards: loaded.config.budgets.guards,
-  });
+  const pack = buildPack(
+    loaded.decisions,
+    loaded.invariants,
+    graph.resolved,
+    {
+      paths: selectors.paths,
+      matchPaths: selectors.matchPaths,
+      warnings,
+      scope: values.scope,
+      budget,
+      maxGuards: loaded.config.budgets.guards,
+    },
+    loaded.findings,
+    findingGraph.resolved,
+  );
 
   if (pack.issues.some((issue) => issue.severity === "error")) {
     for (const issue of pack.issues) {

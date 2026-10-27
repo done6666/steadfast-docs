@@ -119,6 +119,29 @@ function briefTool(args: Record<string, unknown>): ToolResult {
   }
 }
 
+function findingTool(args: Record<string, unknown>): ToolResult {
+  const action = args.action;
+  if (
+    typeof action !== "string" ||
+    !["new", "supersede", "retract", "retire", "explain"].includes(action)
+  ) {
+    return { text: "error: action must be new, supersede, retract, retire or explain", isError: true };
+  }
+  const cliArgs = ["finding", action];
+  if (typeof args.id === "string") cliArgs.push(args.id);
+  for (const key of ["scope", "topic", "target", "claim", "evidence", "confidence", "observedAt"]) {
+    const flag = key === "observedAt" ? "observed-at" : key;
+    if (typeof args[key] === "string") cliArgs.push(`--${flag}`, args[key] as string);
+  }
+  for (const glob of stringArray(args.appliesTo)) cliArgs.push("--applies-to", glob);
+  for (const why of stringArray(args.why)) cliArgs.push("--why", why);
+  const result = runCli(cliArgs);
+  return {
+    text: result.stdout.trim() || result.stderr.trim(),
+    isError: result.status !== 0,
+  };
+}
+
 function checkTool(args: Record<string, unknown>): ToolResult {
   const cliArgs = ["check", "--json"];
   if (typeof args.diff === "string") cliArgs.push("--diff", args.diff);
@@ -310,6 +333,29 @@ const TOOLS = [
     },
   },
   {
+    name: "finding",
+    description:
+      "Record, supersede, retract, retire or explain an observation about a versioned target. Findings are not rules; they enter context only when applies_to matches and retire when a test proves them.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        action: { enum: ["new", "supersede", "retract", "retire", "explain"] },
+        id: { type: "string" },
+        scope: { type: "string" },
+        topic: { type: "string" },
+        target: { type: "string" },
+        claim: { type: "string" },
+        evidence: { type: "string" },
+        confidence: { enum: ["high", "medium", "low"] },
+        observedAt: { type: "string" },
+        appliesTo: { type: "array", items: { type: "string" } },
+        why: { type: "array", items: { type: "string" } },
+      },
+      required: ["action"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "explain",
     description: "Print one record's metadata without loading the archive.",
     inputSchema: {
@@ -356,6 +402,8 @@ function callTool(name: string, args: Record<string, unknown>): ToolResult {
       return verifyTool(args);
     case "new":
       return newTool(args);
+    case "finding":
+      return findingTool(args);
     case "explain":
       return explainTool(args);
     case "supersede":

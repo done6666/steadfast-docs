@@ -14,11 +14,13 @@
         "context_tokens": { "type": "integer", "minimum": 200, "maximum": 50000 },
         "decision_tokens": { "type": "integer", "minimum": 40, "maximum": 1000 },
         "brief_tokens": { "type": "integer", "minimum": 120, "maximum": 2000 },
+        "finding_tokens": { "type": "integer", "minimum": 60, "maximum": 400 },
         "invariants": { "type": "integer", "minimum": 1, "maximum": 25 },
         "guards": { "type": "integer", "minimum": 1, "maximum": 100 }
       }
     },
     "advisory_ttl_days": { "type": "integer", "minimum": 1, "maximum": 3650 },
+    "findings_ttl_days": { "type": "integer", "minimum": 1, "maximum": 3650 },
     "retired_docs": {
       "type": "array",
       "maxItems": 100,

@@ -1,0 +1,20 @@
+id: ADR-0017
+topic: findings
+scope: global
+status: active
+created: 2026-10-27
+applies_to:
+  - src/core/finding.ts
+  - src/commands/finding.ts
+  - src/core/pack.ts
+  - src/core/store.ts
+  - src/commands/check.ts
+  - src/commands/context.ts
+  - test/finding.test.ts
+  - schema/finding.schema.json
+decision: Findings are append-only, target-versioned observations; they enter context only when applies_to matches and retire once a test proves them.
+why:
+  - Facts code cannot prove yet are lost between sessions, but a second decision store would drift.
+enforced_by: test/finding.test.ts
+verified_by: h1:83994bc5706a9a709258a4e4933f6257c195c5e9e92aa890feb9de155aa8b044
+by: agent

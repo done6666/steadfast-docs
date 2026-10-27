@@ -16,6 +16,7 @@ If the steadfast MCP server is connected, call \`steadfast_context\` (OpenCode) 
 If context fails, narrow the paths or ask the human before raising the budget; do not pass \`--allow-partial\`.
 Records are not reading material: do not load other records, legacy docs or architecture notes. The pack is the only context.
 At session start, run \`npx steadfast-docs brief\` to recover the current roadmap step. Update \`.steadfast/roadmap.yaml\` when a step starts or finishes.
+If you discover a fact code cannot prove yet, record a finding; retire it when a test proves it.
 After a new record, fill the record you just created. Never edit an active record; supersede it.
 
 Before committing, call the steadfast \`check\` tool, or run \`npx steadfast-docs check\`.
@@ -123,6 +124,7 @@ function scan(root: string): Record<string, unknown> {
     next: [
       "Write 8-25 invariants to .steadfast/invariants.yaml. One sentence each; if it needs a paragraph it is a decision.",
       "Plan the first roadmap step in .steadfast/roadmap.yaml; run: steadfast brief.",
+      "Record observations that code cannot prove yet as findings; retire them when a test proves them.",
       "Append one decision per non-obvious choice. Give each an enforced_by test or command.",
       "Rules without enforced_by are advisory and expire.",
       "Run: steadfast check --strict",
@@ -158,6 +160,7 @@ export async function initCommand(argv: string[]): Promise<number> {
 
   const base = join(root, ".steadfast");
   mkdirSync(join(base, "decisions"), { recursive: true });
+  mkdirSync(join(base, "findings"), { recursive: true });
 
   const configPath = join(base, "config.yaml");
   if (!existsSync(configPath)) {
@@ -192,6 +195,7 @@ export async function initCommand(argv: string[]): Promise<number> {
   write("  .steadfast/invariants.yaml");
   write("  .steadfast/roadmap.yaml");
   write("  .steadfast/decisions/");
+  write("  .steadfast/findings/");
   write("  AGENTS.md");
   write("");
   write("next: npx steadfast-docs new --scope global --topic <topic> --decision \"<rule>\" --status active");

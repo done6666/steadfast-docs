@@ -17,6 +17,7 @@ test("init scaffolds once and stays idempotent", () => {
   assert.ok(existsSync(join(root, ".steadfast", "config.yaml")));
   assert.ok(existsSync(join(root, ".steadfast", "invariants.yaml")));
   assert.ok(existsSync(join(root, ".steadfast", "roadmap.yaml")));
+  assert.ok(existsSync(join(root, ".steadfast", "findings")));
 
   const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
   assert.equal(agents.split(BEGIN).length - 1, 1);

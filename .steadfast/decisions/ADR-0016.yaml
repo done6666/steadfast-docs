@@ -15,5 +15,5 @@ decision: Execution state lives in a mutable, token-budgeted roadmap; decisions 
 why:
   - Session handoff needs a current step, but a second normative store would drift.
 enforced_by: test/roadmap.test.ts
-verified_by: h1:6d07f7f05e55d7f1bab26e3a8380de8a36dbb6897ffe58d4f6cae02dde2fc43d
+verified_by: h1:795e400d27e8e719d8de0bd22ccbdedc8b48e1389197500d512264639664c036
 by: agent

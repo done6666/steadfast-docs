@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { buildFindingGraph, findingTokens, staleFindingAge } from "../core/finding.js";
 import { tryGit } from "../core/git.js";
 import { buildGraph } from "../core/graph.js";
 import { loadRoadmap, stepTokens } from "../core/roadmap.js";
@@ -76,6 +77,7 @@ function stepDetail(step: Step): string[] {
     `  acceptance: ${step.acceptance}`,
     `  paths: ${step.paths.join(", ")}`,
     ...(step.decisions === undefined ? [] : [`  decisions: ${step.decisions.join(", ")}`]),
+    ...(step.findings === undefined ? [] : [`  findings: ${step.findings.join(", ")}`]),
   ];
 }
 
@@ -253,9 +255,10 @@ export async function briefCommand(argv: string[]): Promise<number> {
 
   const loaded = loadProject(root);
   const graph = buildGraph(loaded.decisions, loaded.files);
+  const findingGraph = buildFindingGraph(loaded.findings, loaded.findingFiles);
   const known = new Set(loaded.decisions.map((decision) => decision.id));
-  const roadmap = loadRoadmap(root, known);
-  const issues = [...loaded.issues, ...graph.issues, ...roadmap.issues];
+  const roadmap = loadRoadmap(root, known, new Set(loaded.findings.map((finding) => finding.id)));
+  const issues = [...loaded.issues, ...graph.issues, ...findingGraph.issues, ...roadmap.issues];
   const errors = issues.filter((issue) => issue.severity === "error");
 
   let cap = loaded.config.budgets.brief_tokens;
@@ -284,6 +287,27 @@ export async function briefCommand(argv: string[]): Promise<number> {
 
   const git = gitState(root);
   const memory = memoryLine(loaded, graph);
+  const findingCounts = { active: 0, superseded: 0, retracted: 0, retired: 0 };
+  let staleFindings = 0;
+  for (const finding of loaded.findings) {
+    const status = findingGraph.resolved.get(finding.id) ?? finding.status;
+    findingCounts[status] += 1;
+    if (
+      status === "active" &&
+      staleFindingAge(finding, loaded.config.findings_ttl_days) !== undefined
+    ) {
+      staleFindings += 1;
+    }
+  }
+  const findingLine =
+    loaded.findings.length === 0
+      ? []
+      : [
+          `findings: ${findingCounts.active} active, ${findingCounts.superseded} superseded, ${findingCounts.retracted} retracted, ${findingCounts.retired} retired, ${staleFindings} stale | ${loaded.findings.reduce(
+            (sum, finding) => sum + findingTokens(finding),
+            0,
+          )} tokens`,
+        ];
   const sections = roadmapSections(roadmap.roadmap);
   const readme = readmeStatus(root);
   const roadmapWarnings = roadmap.issues
@@ -300,6 +324,7 @@ export async function briefCommand(argv: string[]): Promise<number> {
 
   const allSections: Section[] = [
     { name: "memory", lines: [memory.line], optional: false },
+    { name: "findings", lines: findingLine, optional: false },
     {
       name: "git",
       lines: [
@@ -374,6 +399,7 @@ export async function briefCommand(argv: string[]): Promise<number> {
           next: next.map((step) => step.id),
           blocked: blocked.map((step) => step.id),
           memory: { tokens: memory.tokens },
+          findings: { ...findingCounts, stale: staleFindings },
           git,
         },
         null,

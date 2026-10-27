@@ -2,6 +2,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import { parse } from "yaml";
+import {
+  buildFindingGraph,
+  findingTokens,
+  staleFindingAge,
+  validateFinding,
+} from "../core/finding.js";
 import { FileIndex, listRepoFiles } from "../core/fingerprint.js";
 import {
   changedEntries,
@@ -21,7 +27,7 @@ import { loadProject } from "../core/store.js";
 import { estimateTokens, recordTokens } from "../core/tokens.js";
 import { validateConfig, validateDecision } from "../core/validate.js";
 import { paint, write, writeError } from "../output.js";
-import type { Config, Decision, Issue } from "../types.js";
+import type { Config, Decision, Finding, Issue } from "../types.js";
 import { resolveExistingRoot } from "./shared.js";
 
 const DEBT_TRIGGERS: RegExp[] = [
@@ -41,6 +47,7 @@ const DEBT_TRIGGERS: RegExp[] = [
 ];
 
 const DECISION_FILE = /^\.steadfast\/decisions\/.*\.ya?ml$/;
+const FINDING_FILE = /^\.steadfast\/findings\/.*\.ya?ml$/;
 const DAY_MS = 86_400_000;
 
 function isScratch(path: string): boolean {
@@ -74,6 +81,24 @@ function isRetirementOnlyConfigChange(
   } catch {
     return false;
   }
+}
+
+function canonicalFinding(finding: Finding): string {
+  return JSON.stringify({
+    id: finding.id,
+    topic: finding.topic,
+    scope: finding.scope,
+    status: finding.status,
+    target: finding.target,
+    claim: finding.claim,
+    evidence: finding.evidence,
+    confidence: finding.confidence,
+    observed_at: finding.observed_at,
+    applies_to: [...finding.applies_to].sort(),
+    why: finding.why ?? [],
+    supersedes: [...(finding.supersedes ?? [])].sort(),
+    by: finding.by,
+  });
 }
 
 function canonical(decision: Decision): string {
@@ -130,9 +155,15 @@ export async function checkCommand(argv: string[]): Promise<number> {
   const graph = buildGraph(loaded.decisions, loaded.files);
   const issues: Issue[] = [...loaded.issues, ...graph.issues];
   const index = new FileIndex(root);
-  const roadmap = loadRoadmap(root, new Set(loaded.decisions.map((decision) => decision.id)));
+  const roadmap = loadRoadmap(
+    root,
+    new Set(loaded.decisions.map((decision) => decision.id)),
+    new Set(loaded.findings.map((finding) => finding.id)),
+  );
   issues.push(...roadmap.issues);
   const roadmapCurrent = roadmap.roadmap?.steps.find((step) => step.status === "current");
+  const findingGraph = buildFindingGraph(loaded.findings, loaded.findingFiles);
+  issues.push(...findingGraph.issues);
 
   for (const glob of loaded.config.retired_docs) {
     const matches = index.matching([glob]);
@@ -292,6 +323,76 @@ export async function checkCommand(argv: string[]): Promise<number> {
         ...locate,
         id: decision.id,
         fix: "remove enforced_by",
+      });
+    }
+  }
+
+  for (const finding of loaded.findings) {
+    const file = loaded.findingFiles.get(finding.id);
+    const locate = file === undefined ? {} : { file };
+    const resolved = findingGraph.resolved.get(finding.id) ?? finding.status;
+
+    if (file !== undefined) {
+      const name = basename(file);
+      if (name !== `${finding.id}.yaml` && name !== `${finding.id}.yml`) {
+        issues.push({
+          severity: "error",
+          code: "path/filename-mismatch",
+          message: `finding ${finding.id} must live in ${finding.id}.yaml`,
+          file,
+          id: finding.id,
+          fix: `rename the file to ${finding.id}.yaml`,
+        });
+      }
+    }
+
+    if (resolved === "active") {
+      if (
+        finding.evidence !== undefined &&
+        !finding.evidence.startsWith("!") &&
+        safeFile(root, finding.evidence) === undefined
+      ) {
+        issues.push({
+          severity: "error",
+          code: "path/evidence-missing",
+          message: `finding evidence does not exist or escapes the project: ${finding.evidence}`,
+          ...locate,
+          id: finding.id,
+          fix: "point at a real script or log, or use !command",
+        });
+      }
+      if (index.matching(finding.applies_to).length === 0) {
+        issues.push({
+          severity: "warning",
+          code: "path/no-match",
+          message: `finding applies_to matches no files: ${finding.applies_to.join(", ")}`,
+          ...locate,
+          id: finding.id,
+          fix: "fix the glob, or retire the finding",
+        });
+      }
+      const stale = staleFindingAge(finding, loaded.config.findings_ttl_days);
+      if (stale !== undefined) {
+        issues.push({
+          severity: "warning",
+          code: "finding/stale",
+          message: `finding is ${stale} days old; target version may have moved`,
+          ...locate,
+          id: finding.id,
+          fix: "re-observe the target and supersede the finding",
+        });
+      }
+    }
+
+    const tokens = findingTokens(finding);
+    if (resolved === "active" && tokens > loaded.config.budgets.finding_tokens) {
+      issues.push({
+        severity: "error",
+        code: "budget/finding",
+        message: `finding is ${tokens} tokens; limit is ${loaded.config.budgets.finding_tokens}`,
+        ...locate,
+        id: finding.id,
+        fix: "one fact per finding; supersede instead of explaining history",
       });
     }
   }
@@ -492,6 +593,16 @@ export async function checkCommand(argv: string[]): Promise<number> {
         }
       };
 
+      const readFinding = (file: string): Finding | undefined => {
+        const text = fileAtRef(root, ref, file);
+        if (text === undefined) return undefined;
+        try {
+          return validateFinding(parse(text), file).value;
+        } catch {
+          return undefined;
+        }
+      };
+
       for (const entry of entries) {
         const relevant = [entry.path, ...(entry.from === undefined ? [] : [entry.from])].filter(
           (path) => DECISION_FILE.test(path) && !isScratch(path),
@@ -554,6 +665,64 @@ export async function checkCommand(argv: string[]): Promise<number> {
           });
         }
       }
+
+      for (const entry of entries) {
+        const relevant = [entry.path, ...(entry.from === undefined ? [] : [entry.from])].filter(
+          (path) => FINDING_FILE.test(path) && !isScratch(path),
+        );
+        if (relevant.length === 0) continue;
+
+        if (entry.status === "R" || entry.status === "C") {
+          issues.push({
+            severity: "error",
+            code: "history/renamed-finding",
+            message: "findings are append-only; renaming hides the old observation",
+            file: entry.path,
+            fix: "restore the original path and supersede with a new finding",
+          });
+          continue;
+        }
+
+        if (entry.status === "D") {
+          issues.push({
+            severity: "error",
+            code: "history/deleted-finding",
+            message: "findings are append-only; this file was deleted",
+            file: entry.path,
+            fix: "restore it and supersede it with a new finding instead",
+          });
+          continue;
+        }
+
+        if (entry.status !== "M") continue;
+        const old = readFinding(entry.path);
+        if (!existsSync(join(root, entry.path))) {
+          issues.push({
+            severity: "error",
+            code: "history/deleted-finding",
+            message: "findings are append-only; this file was deleted",
+            file: entry.path,
+          });
+          continue;
+        }
+        const current = loaded.findings.find(
+          (finding) => loaded.findingFiles.get(finding.id) === entry.path,
+        );
+        if (
+          old !== undefined &&
+          current !== undefined &&
+          canonicalFinding(old) !== canonicalFinding(current)
+        ) {
+          issues.push({
+            severity: "error",
+            code: "history/edited-finding",
+            message: `finding content changed since ${ref} (merge base)`,
+            file: entry.path,
+            id: current.id,
+            fix: "append a new finding and supersede this one",
+          });
+        }
+      }
     }
   }
 
@@ -576,6 +745,16 @@ export async function checkCommand(argv: string[]): Promise<number> {
       0,
     );
 
+  const findingCounts = { active: 0, superseded: 0, retracted: 0, retired: 0 };
+  for (const finding of loaded.findings) {
+    const status = findingGraph.resolved.get(finding.id) ?? finding.status;
+    findingCounts[status] += 1;
+  }
+  const findingTokensTotal = loaded.findings.reduce(
+    (sum, finding) => sum + findingTokens(finding),
+    0,
+  );
+
   const errors = issues.filter((issue) => issue.severity === "error");
   const warnings = issues.filter((issue) => issue.severity === "warning");
   const failed = errors.length > 0 || (values.strict && warnings.length > 0);
@@ -594,6 +773,12 @@ export async function checkCommand(argv: string[]): Promise<number> {
             decisions: loaded.decisions.length,
             ...counts,
             invariants: loaded.invariants.length,
+            findings: loaded.findings.length,
+            findings_active: findingCounts.active,
+            findings_superseded: findingCounts.superseded,
+            findings_retracted: findingCounts.retracted,
+            findings_retired: findingCounts.retired,
+            finding_tokens: findingTokensTotal,
             memory_tokens: memoryTokens,
             roadmap_steps: roadmap.roadmap?.steps.length ?? 0,
             roadmap_current: roadmapCurrent?.id ?? null,
@@ -625,8 +810,12 @@ export async function checkCommand(argv: string[]): Promise<number> {
     roadmap.roadmap === undefined
       ? ""
       : ` | roadmap ${roadmap.roadmap.steps.length} steps${roadmapCurrent === undefined ? "" : `, current ${roadmapCurrent.id}`}`;
+  const findingSummary =
+    loaded.findings.length === 0
+      ? ""
+      : ` | findings ${findingCounts.active} active, ${findingCounts.retracted} retracted, ${findingCounts.retired} retired`;
   write(
-    `${paint.bold("steadfast check")} | ${counts.active} active, ${counts.superseded} superseded, ${counts.rejected} rejected, ${counts.retired} retired, ${counts.draft} draft | ${loaded.invariants.length} invariants | ${memoryTokens} memory tokens${roadmapSummary}`,
+    `${paint.bold("steadfast check")} | ${counts.active} active, ${counts.superseded} superseded, ${counts.rejected} rejected, ${counts.retired} retired, ${counts.draft} draft | ${loaded.invariants.length} invariants | ${memoryTokens} memory tokens${findingSummary}${roadmapSummary}`,
   );
   const summary = `${errors.length} errors, ${warnings.length} warnings`;
   write(failed ? paint.red(summary) : paint.green(summary));

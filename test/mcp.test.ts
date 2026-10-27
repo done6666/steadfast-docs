@@ -31,6 +31,30 @@ test("mcp exposes the memory tools over stdio", () => {
     ).status,
     0,
   );
+  assert.equal(
+    cli(
+      [
+        "finding",
+        "new",
+        "--scope",
+        "global",
+        "--topic",
+        "rule",
+        "--target",
+        "demo@1.0.0",
+        "--claim",
+        "Rule one is observed.",
+        "--evidence",
+        "test/a.test.ts",
+        "--confidence",
+        "high",
+        "--applies-to",
+        "src/**",
+      ],
+      root,
+    ).status,
+    0,
+  );
 
   const requests = [
     { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } },
@@ -66,6 +90,12 @@ test("mcp exposes the memory tools over stdio", () => {
       method: "tools/call",
       params: { name: "brief", arguments: {} },
     },
+    {
+      jsonrpc: "2.0",
+      id: 8,
+      method: "tools/call",
+      params: { name: "finding", arguments: { action: "explain", id: "FIND-0001" } },
+    },
   ];
 
   const input = [
@@ -92,7 +122,7 @@ test("mcp exposes the memory tools over stdio", () => {
     });
   const byId = new Map(messages.map((message) => [message.id, message.result]));
 
-  assert.equal(messages.length, 8);
+  assert.equal(messages.length, 9);
   assert.equal(byId.get(null as any), undefined);
   const invalid = messages.find((message) => message.id === null);
   assert.equal(invalid?.error?.code, -32600);
@@ -105,7 +135,7 @@ test("mcp exposes the memory tools over stdio", () => {
   }>;
   assert.deepEqual(
     tools.map((tool) => tool.name).sort(),
-    ["brief", "check", "context", "doctor", "explain", "new", "supersede", "verify"],
+    ["brief", "check", "context", "doctor", "explain", "finding", "new", "supersede", "verify"],
   );
   const verify = tools.find((tool) => tool.name === "verify");
   assert.equal("trust" in (verify?.inputSchema.properties ?? {}), false);
@@ -116,6 +146,7 @@ test("mcp exposes the memory tools over stdio", () => {
   assert.equal(JSON.parse(byId.get(5).content[0].text).ok, true);
   assert.equal(JSON.parse(byId.get(6).content[0].text).ok, true);
   assert.match(byId.get(7).content[0].text, /^# steadfast brief v1/);
+  assert.match(byId.get(8).content[0].text, /FIND-0001/);
 });
 
 test("mcp context forwards strict, allowPartial and the repo root", () => {

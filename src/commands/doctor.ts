@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
+import { buildFindingGraph, staleFindingAge } from "../core/finding.js";
 import { buildGraph } from "../core/graph.js";
 import { safeFile } from "../core/paths.js";
 import { loadRoadmap } from "../core/roadmap.js";
@@ -113,6 +114,7 @@ export async function doctorCommand(argv: string[]): Promise<number> {
     ["config", ".steadfast/config.yaml"],
     ["invariants", ".steadfast/invariants.yaml"],
     ["decisions", ".steadfast/decisions"],
+    ["findings", ".steadfast/findings"],
   ] as const) {
     const exists = existsSync(join(root, path));
     add(exists ? "ok" : "error", id, path, exists ? undefined : "run: steadfast init");
@@ -219,7 +221,11 @@ export async function doctorCommand(argv: string[]): Promise<number> {
     advisory.length === 0 ? undefined : "add enforced_by, or supersede the rule",
   );
 
-  const roadmap = loadRoadmap(root, new Set(loaded.decisions.map((decision) => decision.id)));
+  const roadmap = loadRoadmap(
+    root,
+    new Set(loaded.decisions.map((decision) => decision.id)),
+    new Set(loaded.findings.map((finding) => finding.id)),
+  );
   const roadmapErrors = roadmap.issues.filter((issue) => issue.severity === "error").length;
   const roadmapCurrent = roadmap.roadmap?.steps.find((step) => step.status === "current");
   const roadmapTodo = roadmap.roadmap?.steps.filter((step) => step.status === "todo").length ?? 0;
@@ -242,6 +248,29 @@ export async function doctorCommand(argv: string[]): Promise<number> {
         ? "roadmap: no open steps"
         : `roadmap: ${roadmapCurrent.id} ${roadmapCurrent.goal}`,
     );
+  }
+
+  const findingGraph = buildFindingGraph(loaded.findings, loaded.findingFiles);
+  const findingErrors = findingGraph.issues.filter((issue) => issue.severity === "error").length;
+  const activeFindings = loaded.findings.filter(
+    (finding) => findingGraph.resolved.get(finding.id) === "active",
+  );
+  const staleFindings = activeFindings.filter(
+    (finding) => staleFindingAge(finding, loaded.config.findings_ttl_days) !== undefined,
+  ).length;
+  if (loaded.findings.length === 0) {
+    add("ok", "findings", "findings: none");
+  } else if (findingErrors > 0) {
+    add("error", "findings", `findings have ${findingErrors} error(s)`, "run: steadfast check");
+  } else if (staleFindings > 0) {
+    add(
+      "warn",
+      "findings",
+      `${staleFindings} stale finding(s); ${activeFindings.length} active`,
+      "re-observe the target and supersede stale findings",
+    );
+  } else {
+    add("ok", "findings", `findings: ${activeFindings.length} active`);
   }
 
   const errors = checks.filter((check) => check.status === "error");

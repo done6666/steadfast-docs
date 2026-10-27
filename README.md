@@ -6,7 +6,7 @@ Documentation that only agents read. Humans ask; agents remember; CI keeps the m
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-155-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-170-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
@@ -73,7 +73,7 @@ The agent plans the paths, calls `context`, reads only the pack, implements, run
 | OpenCode | `.opencode/opencode.json` (`mcp.servers.steadfast`) | `steadfast_*` |
 | Claude Code | `.mcp.json` (`mcpServers.steadfast`) | `mcp__steadfast__*` |
 
-The server exposes `brief`, `context`, `check`, `verify`, `new`, `explain`, `supersede` and `doctor`. It is a JSON-RPC wrapper over the same CLI, so there is one implementation and two entry points. `--print` shows the config without writing it; `--check` verifies an existing install.
+The server exposes `brief`, `context`, `check`, `verify`, `new`, `finding`, `explain`, `supersede` and `doctor`. It is a JSON-RPC wrapper over the same CLI, so there is one implementation and two entry points. `--print` shows the config without writing it; `--check` verifies an existing install.
 
 `hook install` adds a managed block to the real git hooks directory (respecting a repo-local `core.hooksPath`, worktrees and submodules) that runs `check --strict --staged --diff HEAD`. `--staged` refuses to validate a working tree that differs from the index, so what the hook approves is what the commit contains. An existing hook is chained as `pre-commit.steadfast-original` (non-shell hooks included), runs before the check, and is restored by `hook remove`. A hooks directory shared outside the repository is refused, because a project-specific hook would run in every repo. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
 
@@ -120,6 +120,30 @@ compiles a ≤300-token session view — current step, next steps, blockers, rec
 commits, worktrees and memory stats — and stores nothing. The full roadmap is
 never loaded into context.
 
+## What a finding is
+
+Decisions say what must stay true; findings say what is true about a versioned
+target. They are for facts code cannot prove *yet*: an offset, a protocol
+detail, an observed behaviour. One finding is one fact and one piece of
+evidence.
+
+```yaml
+id: FIND-0001
+topic: health-offset
+scope: client
+status: active
+target: game-client@1.2.3
+claim: Health is a float at 0x1A2B3C.
+evidence: scripts/re/health.py
+confidence: high
+observed_at: 2026-10-27
+applies_to: [src/features/wallhack/**]
+```
+
+Findings enter a pack only when `applies_to` matches. Retracted findings become
+`do_not_revisit`; retired findings disappear once a test proves them. They are
+append-only: correct one by appending a successor with `supersedes`.
+
 ## Why it does not rot
 
 - **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`.
@@ -140,6 +164,7 @@ never loaded into context.
 | `npx steadfast-docs context --for <paths>` | Compile the token-budgeted pack for a task (files, dirs or globs) |
 | `npx steadfast-docs check --strict --diff main` | Validate schema, graph, freshness, paths, budgets and history |
 | `npx steadfast-docs new ...` | Append a decision record |
+| `npx steadfast-docs finding new\|supersede\|retract\|retire\|explain` | Record, correct or retire an observation |
 | `npx steadfast-docs explain <id>` | Inspect one record, its status and successor |
 | `npx steadfast-docs supersede <id> --decision <text>` | Append a successor; the old record is derived as superseded |
 | `npx steadfast-docs verify <ids> --assume` | Recompute fingerprints after the tests pass |
@@ -188,6 +213,7 @@ npx steadfast-docs retire legacy-docs --apply
 ## What it is not
 
 - Not a memory bank or a RAG store. Those recall what happened; this records what was decided and detects when the record or the code it governs drifts.
+- Not a knowledge base. Findings are one-fact, versioned observations with evidence; they retire when code proves them.
 - Not human documentation. In a steadfast project, humans talk to the agent and read code; the memory is machine-first.
 - Not a documentation generator. If a fact can be derived from code, derive it; do not store it.
 
@@ -221,7 +247,7 @@ node dist/src/cli.js check --strict
 ## Status
 
 0.4.0 published. The agent-native slice is complete: `init`, `brief`, `new`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
-A real-project pilot has completed; next is rollout and task-scope contracts (`start` / `check` / `end`).
+Unreleased: the findings layer. A real-project pilot has completed; next is rollout and task-scope contracts (`start` / `check` / `end`).
 
 ## License
 

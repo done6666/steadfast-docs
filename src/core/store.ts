@@ -8,6 +8,7 @@ import {
   validateDecision,
   validateInvariants,
 } from "./validate.js";
+import { loadFindings } from "./finding.js";
 import { insideRoot } from "./paths.js";
 
 export function findProjectRoot(start: string): string | undefined {
@@ -77,7 +78,9 @@ export function loadProject(root: string): Loaded {
       config: DEFAULT_CONFIG,
       invariants: [],
       decisions: [],
+      findings: [],
       files: new Map(),
+      findingFiles: new Map(),
       issues,
     };
   }
@@ -167,5 +170,17 @@ export function loadProject(root: string): Loaded {
     decisions.push(decision);
   }
 
-  return { root, config, invariants, decisions, files, issues };
+  const loadedFindings = loadFindings(root);
+  issues.push(...loadedFindings.issues);
+
+  return {
+    root,
+    config,
+    invariants,
+    decisions,
+    findings: loadedFindings.findings,
+    files,
+    findingFiles: loadedFindings.files,
+    issues,
+  };
 }

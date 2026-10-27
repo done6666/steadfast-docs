@@ -1,0 +1,13 @@
+id: FIND-0001
+topic: real-pilot
+scope: benchmark
+status: active
+target: steam-saat@8eb26eb
+claim: Five tasks used about 1,667 tokens against about 8,942 for the document baseline, roughly 5x less.
+evidence: benchmarks/real-01/README.md
+confidence: medium
+observed_at: 2026-10-27
+applies_to:
+  - benchmarks/real-01/**
+  - README.md
+by: agent

@@ -9,9 +9,9 @@ description: Use when a repository has .steadfast/ or AGENTS.md mentions steadfa
 
 Use this skill when `.steadfast/` exists or `AGENTS.md` mentions steadfast.
 
-With MCP connected, call its `brief`, `context`, `check`, `verify`, `new` and
-`supersede` tools instead of the CLI below; clients prefix the names
-(`steadfast_*` in OpenCode, `mcp__steadfast__*` in Claude).
+With MCP connected, call its `brief`, `context`, `check`, `verify`, `new`,
+`finding` and `supersede` tools instead of the CLI below; clients prefix the
+names (`steadfast_*` in OpenCode, `mcp__steadfast__*` in Claude).
 
 ## 0. Recover state
 
@@ -72,7 +72,7 @@ asserts the check passed. If one command covers several, pass ids explicitly:
 
     npx steadfast-docs verify <id...> --run "<command>"
 
-Use `--trust` only after reading a record's `!command`; it executes code.
+Use `--trust` only after reading a record's `!command`.
 
 `check` must be green before commit; never hand-edit `verified_by`.
 
@@ -95,7 +95,8 @@ Then set `status: active` and run `verify`.
 - One rule per record; put rejected alternatives in `rejected`, one line each.
 - Prefer a guard (`deny`, `instead`, `check`) over prose.
 - If a rule changes, run `steadfast supersede <id> --decision "<rule>"`.
-- If the choice is not enforceable, leave it advisory; it will expire.
+- If you learn a fact code cannot prove yet, record it with `steadfast finding new`; retire it when a test proves it.
+- Unenforceable rules are advisory and expire.
 - When a roadmap step is finished, set `status: done` and `evidence: <test or
   commit>` in `.steadfast/roadmap.yaml`, then make the next unblocked step
   `current`.
@@ -109,7 +110,7 @@ Tell the human only:
 - any guard that blocked a path
 
 Leave a durable handoff in the commit body or an issue: `Finding:`, `Decision:`,
-`Next:`. Update the README `Status` section when the release state changes.
+`Next:`. Update README `Status` on release changes.
 
 ## Stop conditions
 

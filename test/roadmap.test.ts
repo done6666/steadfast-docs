@@ -138,6 +138,18 @@ test("roadmap decisions must exist", () => {
   assert.match(result.stdout, /roadmap\/decision-missing/);
 });
 
+test("roadmap findings must exist", () => {
+  const root = project();
+  roadmap(
+    root,
+    VALID.replace("status: current", "status: current\n    findings: [FIND-9999]"),
+  );
+
+  const result = cli(["check"], root);
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /roadmap\/finding-missing/);
+});
+
 test("brief fails on an invalid roadmap instead of guessing", () => {
   const root = project();
   roadmap(root, "version: 1\nsteps:\n  - id: STEP-001\n");

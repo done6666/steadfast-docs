@@ -17,10 +17,12 @@ export const STEP_FIELDS = [
   "evidence",
   "blocked_by",
   "decisions",
+  "findings",
 ] as const;
 
 const STEP_ID_RE = /^STEP-[0-9]{3,}$/;
 const DECISION_ID_RE = /^ADR-[0-9]{4,}$/;
+const FINDING_ID_RE = /^FIND-[0-9]{4,}$/;
 const DATE_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 const STATUSES: readonly StepStatus[] = ["todo", "current", "blocked", "done", "dropped"];
 const STALE_WARN_DAYS = 7;
@@ -163,6 +165,7 @@ export function validateRoadmap(
   raw: unknown,
   file: string,
   knownDecisions?: Set<string>,
+  knownFindings?: Set<string>,
 ): { value?: Roadmap; issues: Issue[] } {
   const issues: Issue[] = [];
   if (!isObject(raw)) {
@@ -253,6 +256,16 @@ export function validateRoadmap(
         }
       }
     }
+    const findings = readArray(entry, "findings", 8, 32, issues, file, id, false);
+    if (findings) {
+      for (const finding of findings) {
+        if (!FINDING_ID_RE.test(finding)) {
+          error(issues, "schema/id", `invalid finding id "${finding}"`, file, id);
+        } else if (knownFindings !== undefined && !knownFindings.has(finding)) {
+          error(issues, "roadmap/finding-missing", `finding ${finding} does not exist`, file, id);
+        }
+      }
+    }
 
     if (
       status === "done" &&
@@ -271,6 +284,7 @@ export function validateRoadmap(
     if (evidence !== undefined) value.evidence = evidence;
     if (blockedBy !== undefined) value.blocked_by = blockedBy;
     if (decisions && decisions.length > 0) value.decisions = decisions;
+    if (findings && findings.length > 0) value.findings = findings;
     steps.push(value);
   }
 
@@ -344,6 +358,7 @@ export function validateRoadmap(
 export function loadRoadmap(
   root: string,
   knownDecisions?: Set<string>,
+  knownFindings?: Set<string>,
 ): { roadmap?: Roadmap; issues: Issue[]; file: string } {
   const file = ROADMAP_FILE;
   const path = join(root, file);
@@ -381,7 +396,7 @@ export function loadRoadmap(
     };
   }
 
-  const result = validateRoadmap(raw, file, knownDecisions);
+  const result = validateRoadmap(raw, file, knownDecisions, knownFindings);
   return {
     ...(result.value === undefined ? {} : { roadmap: result.value }),
     issues: result.issues,
@@ -397,6 +412,7 @@ export function stepTokens(step: Step): number {
       acceptance: step.acceptance,
       paths: step.paths,
       decisions: step.decisions ?? [],
+      findings: step.findings ?? [],
     }),
   );
 }

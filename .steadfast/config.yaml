@@ -2,6 +2,9 @@ version: 1
 budgets:
   context_tokens: 1500
   decision_tokens: 160
+  brief_tokens: 300
+  finding_tokens: 120
   invariants: 25
   guards: 30
 advisory_ttl_days: 90
+findings_ttl_days: 90

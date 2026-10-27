@@ -1,4 +1,11 @@
-import type { Decision, Invariant, Issue, ResolvedStatus } from "../types.js";
+import type {
+  Decision,
+  Finding,
+  Invariant,
+  Issue,
+  ResolvedFindingStatus,
+  ResolvedStatus,
+} from "../types.js";
 import { matchGlob, normalizePath, specificity } from "./glob.js";
 import { estimateTokens } from "./tokens.js";
 
@@ -28,12 +35,20 @@ export interface PackResult {
   included: {
     invariants: string[];
     decisions: string[];
+    findings: string[];
     guards: string[];
     rejected: string[];
+    retracted_findings: string[];
   };
 }
 
-type Kind = "invariant" | "guard" | "decision" | "rejected";
+type Kind =
+  | "invariant"
+  | "guard"
+  | "decision"
+  | "finding"
+  | "rejected"
+  | "retracted_finding";
 
 interface Item {
   kind: Kind;
@@ -48,7 +63,9 @@ const PRIORITY: Record<Kind, number> = {
   invariant: 0,
   guard: 1,
   decision: 2,
-  rejected: 3,
+  finding: 3,
+  rejected: 4,
+  retracted_finding: 5,
 };
 
 const quote = (value: string): string => JSON.stringify(value);
@@ -68,11 +85,28 @@ function matchedPaths(
   });
 }
 
+function matchedFindingPaths(
+  finding: Finding,
+  paths: string[],
+  pathSet?: Set<string>,
+): string[] {
+  if (paths.length === 0) return finding.applies_to;
+  return finding.applies_to.filter((glob) => {
+    const normalized = normalizePath(glob).replace(/\/+/g, "/").replace(/\/+$/, "");
+    if (pathSet !== undefined && !/[*?]/.test(normalized)) {
+      return pathSet.has(normalized);
+    }
+    return paths.some((path) => matchGlob(path, normalized));
+  });
+}
+
 export function buildPack(
   decisions: Decision[],
   invariants: Invariant[],
   resolved: Map<string, ResolvedStatus>,
   request: PackRequest,
+  findings: Finding[] = [],
+  resolvedFindings: Map<string, ResolvedFindingStatus> = new Map(),
 ): PackResult {
   const issues: Issue[] = [];
   const clean = (value: string): string =>
@@ -103,7 +137,14 @@ export function buildPack(
       requiredGuards: 0,
       guardLimit: request.maxGuards,
       issues,
-      included: { invariants: [], decisions: [], guards: [], rejected: [] },
+      included: {
+        invariants: [],
+        decisions: [],
+        findings: [],
+        guards: [],
+        rejected: [],
+        retracted_findings: [],
+      },
     };
   }
 
@@ -133,6 +174,23 @@ export function buildPack(
     return scopeHit || pathHit;
   };
 
+  const findingMatchCache = new Map<string, string[]>();
+  const matchedFindingFor = (finding: Finding): string[] => {
+    const cached = findingMatchCache.get(finding.id);
+    if (cached !== undefined) return cached;
+    const value = matchedFindingPaths(finding, matchPaths, matchPathSet);
+    findingMatchCache.set(finding.id, value);
+    return value;
+  };
+  const findingRankOf = (finding: Finding): number =>
+    Math.max(0, ...matchedFindingFor(finding).map(specificity));
+  const matchesFinding = (finding: Finding): boolean => {
+    const scopeHit =
+      scope !== undefined && (finding.scope === scope || finding.scope === "global");
+    const pathHit = matchPaths.length > 0 && matchedFindingFor(finding).length > 0;
+    return scopeHit || pathHit;
+  };
+
   const active = decisions
     .filter((decision) => resolved.get(decision.id) === "active" && matches(decision))
     .sort((a, b) => {
@@ -143,6 +201,21 @@ export function buildPack(
 
   const rejected = decisions
     .filter((decision) => resolved.get(decision.id) === "rejected" && matches(decision))
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  const activeFindings = findings
+    .filter((finding) => resolvedFindings.get(finding.id) === "active" && matchesFinding(finding))
+    .sort((a, b) => {
+      const bySpecificity = findingRankOf(b) - findingRankOf(a);
+      if (bySpecificity !== 0) return bySpecificity;
+      return a.id.localeCompare(b.id);
+    });
+
+  const retractedFindings = findings
+    .filter(
+      (finding) =>
+        resolvedFindings.get(finding.id) === "retracted" && matchesFinding(finding),
+    )
     .sort((a, b) => a.id.localeCompare(b.id));
 
   const selectedInvariants = invariants.filter((invariant) => {
@@ -212,6 +285,18 @@ export function buildPack(
     }
   }
 
+  for (const finding of activeFindings) {
+    const item: Item = {
+      kind: "finding",
+      priority: PRIORITY.finding,
+      rank: findingRankOf(finding),
+      id: finding.id,
+      text: `  - id: ${finding.id}\n    target: ${quote(finding.target)}\n    claim: ${quote(finding.claim)}\n    confidence: ${finding.confidence}\n    evidence: ${quote(finding.evidence)}`,
+    };
+    items.push(item);
+    initialItems.push(item);
+  }
+
   for (const decision of rejected) {
     const because = decision.why?.[0] ?? "rejected";
     const item: Item = {
@@ -220,6 +305,19 @@ export function buildPack(
       rank: rankOf(decision),
       id: decision.id,
       text: `  - id: ${decision.id}\n    proposal: ${quote(decision.decision)}\n    because: ${quote(because)}`,
+    };
+    items.push(item);
+    initialItems.push(item);
+  }
+
+  for (const finding of retractedFindings) {
+    const because = finding.why?.[0] ?? "retracted";
+    const item: Item = {
+      kind: "retracted_finding",
+      priority: PRIORITY.retracted_finding,
+      rank: findingRankOf(finding),
+      id: finding.id,
+      text: `  - id: ${finding.id}\n    claim: ${quote(finding.claim)}\n    because: ${quote(because)}`,
     };
     items.push(item);
     initialItems.push(item);
@@ -248,15 +346,16 @@ export function buildPack(
 
   const render = (chosen: Item[], headerLines: string[]): string => {
     const lines = [...headerLines];
-    const sections: Array<[string, Kind]> = [
-      ["invariants", "invariant"],
-      ["decisions", "decision"],
-      ["guards", "guard"],
-      ["do_not_revisit", "rejected"],
+    const sections: Array<[string, Kind[]]> = [
+      ["invariants", ["invariant"]],
+      ["decisions", ["decision"]],
+      ["findings", ["finding"]],
+      ["guards", ["guard"]],
+      ["do_not_revisit", ["rejected", "retracted_finding"]],
     ];
 
-    for (const [title, kind] of sections) {
-      const group = chosen.filter((item) => item.kind === kind);
+    for (const [title, kinds] of sections) {
+      const group = chosen.filter((item) => kinds.includes(item.kind));
       if (group.length === 0) continue;
       lines.push("");
       lines.push(`${title}:`);
@@ -353,8 +452,12 @@ export function buildPack(
   const included = {
     invariants: chosen.filter((item) => item.kind === "invariant").map((item) => item.id),
     decisions: chosen.filter((item) => item.kind === "decision").map((item) => item.id),
+    findings: chosen.filter((item) => item.kind === "finding").map((item) => item.id),
     guards: chosen.filter((item) => item.kind === "guard").map((item) => item.id),
     rejected: chosen.filter((item) => item.kind === "rejected").map((item) => item.id),
+    retracted_findings: chosen
+      .filter((item) => item.kind === "retracted_finding")
+      .map((item) => item.id),
   };
   const requiredTokens =
     omitted > 0 ? measure(items, 0, false).tokens : result.tokens;
