@@ -65,7 +65,7 @@ function targetProblem(
   }
 }
 
-function writeConfig(
+export function writeConfig(
   root: string,
   path: string,
   config: Record<string, unknown>,

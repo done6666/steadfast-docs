@@ -5,9 +5,7 @@ description: Use when a repository has .steadfast/ or AGENTS.md mentions steadfa
 
 # Steadfast Memory
 
-## Trigger
-
-Use this skill when `.steadfast/` exists or `AGENTS.md` mentions steadfast.
+## Tools
 
 With MCP connected, call its `brief`, `context`, `check`, `verify`, `new`,
 `finding` and `supersede` tools instead of the CLI below; clients prefix the
@@ -15,9 +13,9 @@ names (`steadfast_*` in OpenCode, `mcp__steadfast__*` in Claude).
 
 ## 0. Recover state
 
-Run `npx steadfast-docs brief` first. It prints the current roadmap step, next
-steps, blockers, recent commits and worktrees. Do not open
-`.steadfast/roadmap.yaml` directly; edit it only to update status and evidence.
+Run `npx steadfast-docs brief` first, unless the session already shows it.
+Resume from the current step's `checkpoint.next`. Edit
+`.steadfast/roadmap.yaml` only for status, evidence and checkpoint.
 
 ## 1. Plan the path set
 
@@ -97,9 +95,8 @@ Then set `status: active` and run `verify`.
 - If a rule changes, run `steadfast supersede <id> --decision "<rule>"`.
 - If you learn a fact code cannot prove yet, record it with `steadfast finding new`; retire it when a test proves it.
 - Unenforceable rules are advisory and expire.
-- When a roadmap step is finished, set `status: done` and `evidence: <test or
-  commit>` in `.steadfast/roadmap.yaml`, then make the next unblocked step
-  `current`.
+- When a step is finished, set `status: done`, `evidence: <test or commit>`,
+  drop its checkpoint, and make the next unblocked step `current`.
 
 ## 7. Hand off
 
@@ -109,8 +106,10 @@ Tell the human only:
 - decisions that need approval, one line each
 - any guard that blocked a path
 
-Leave a durable handoff in the commit body or an issue: `Finding:`, `Decision:`,
-`Next:`. Update README `Status` on release changes.
+Before each commit and before you stop, rewrite the current step's
+`checkpoint`: `next` (one action), `done` (max 3), `open` (max 2); `check
+--diff` fails if step paths changed but it did not. Update README `Status` on
+release changes.
 
 ## Stop conditions
 

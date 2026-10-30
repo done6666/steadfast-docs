@@ -1,0 +1,16 @@
+id: ADR-0019
+topic: session-start
+scope: global
+status: active
+created: 2026-10-30
+applies_to:
+  - src/commands/hook.ts
+  - test/hook.test.ts
+decision: hook install --platform claude adds a SessionStart hook that runs brief; platforms without a session-start context hook are refused.
+why:
+  - Memory the agent must pull gets skipped; a harness hook pushes it into every new, resumed or compacted session.
+rejected:
+  - "OpenCode compaction plugin: experimental API and it fires only on compaction, not at session start."
+enforced_by: test/hook.test.ts
+by: agent
+verified_by: h1:49a9e159038fb341ba42dfdf702e0de6bc99fc1ac67ca88d69f1a8640164f8fe

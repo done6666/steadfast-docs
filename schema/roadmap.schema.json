@@ -42,6 +42,10 @@
         {
           "if": { "properties": { "status": { "const": "blocked" } }, "required": ["status"] },
           "then": { "required": ["blocked_by"] }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["done", "dropped"] } }, "required": ["status"] },
+          "then": { "not": { "required": ["checkpoint"] } }
         }
       ],
       "properties": {
@@ -84,6 +88,28 @@
           "type": "array",
           "maxItems": 8,
           "items": { "type": "string", "pattern": "^FIND-[0-9]{4,}$", "maxLength": 32 }
+        },
+        "checkpoint": { "$ref": "#/$defs/checkpoint" }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["next"],
+      "description": "Where the last session stopped. Rewritten in place; brief shows it, and a diff that touches the step's paths must move it. Done and dropped steps carry none.",
+      "properties": {
+        "next": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "\\S", "description": "The next concrete action." },
+        "done": {
+          "type": "array",
+          "maxItems": 3,
+          "items": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
+          "description": "What this step already finished."
+        },
+        "open": {
+          "type": "array",
+          "maxItems": 2,
+          "items": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
+          "description": "Unresolved questions or working assumptions."
         }
       }
     }

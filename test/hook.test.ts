@@ -402,3 +402,69 @@ test("the hook works when the project is below the git root", () => {
   });
   assert.equal(passed.status, 0, `${passed.stdout}${passed.stderr}`);
 });
+
+test("hook install --platform claude runs brief at every session start", () => {
+  const root = project();
+  write(
+    root,
+    ".claude/settings.json",
+    JSON.stringify({
+      permissions: { allow: ["Bash(ls)"] },
+      hooks: { SessionStart: [{ hooks: [{ type: "command", command: "echo hi" }] }] },
+    }),
+  );
+
+  assert.equal(cli(["hook", "install", "--platform", "claude"], root).status, 0);
+  assert.equal(cli(["hook", "install", "--platform", "claude"], root).status, 0);
+  const settings = JSON.parse(readFileSync(join(root, ".claude", "settings.json"), "utf8")) as {
+    permissions: unknown;
+    hooks: { SessionStart: Array<{ matcher?: string; hooks: Array<{ command: string }> }> };
+  };
+  assert.deepEqual(settings.permissions, { allow: ["Bash(ls)"] });
+  const commands = settings.hooks.SessionStart.flatMap((entry) => entry.hooks.map((hook) => hook.command));
+  assert.deepEqual(commands, ["echo hi", "npx -y steadfast-docs brief"]);
+  assert.ok(settings.hooks.SessionStart.every((entry) => entry.matcher === undefined));
+
+  const check = cli(["hook", "install", "--platform", "claude", "--check"], root);
+  assert.equal(check.status, 0, check.stderr);
+  assert.match(check.stdout, /SessionStart brief/);
+
+  assert.equal(cli(["hook", "remove", "--platform", "claude"], root).status, 0);
+  const after = JSON.parse(readFileSync(join(root, ".claude", "settings.json"), "utf8")) as {
+    hooks: { SessionStart: Array<{ hooks: Array<{ command: string }> }> };
+  };
+  assert.deepEqual(
+    after.hooks.SessionStart.flatMap((entry) => entry.hooks.map((hook) => hook.command)),
+    ["echo hi"],
+  );
+  const missing = cli(["hook", "install", "--platform", "claude", "--check"], root);
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /missing: SessionStart brief/);
+});
+
+test("hook install --platform prefers a locally installed CLI", () => {
+  const root = project();
+  write(root, "node_modules/.bin/steadfast", "#!/bin/sh\n");
+  assert.equal(cli(["hook", "install", "--platform", "claude"], root).status, 0);
+  const text = readFileSync(join(root, ".claude", "settings.json"), "utf8");
+  assert.match(text, /\.\/node_modules\/\.bin\/steadfast brief/);
+});
+
+test("hook install refuses platforms without a session-start hook", () => {
+  const root = project();
+  const opencode = cli(["hook", "install", "--platform", "opencode"], root);
+  assert.equal(opencode.status, 2);
+  assert.match(opencode.stderr, /no session-start context hook/);
+  assert.equal(existsSync(join(root, ".git", "hooks", "pre-commit")), false);
+  assert.equal(cli(["hook", "install", "--platform", "cursor"], root).status, 2);
+});
+
+test("hook install --platform claude refuses malformed settings", () => {
+  const root = project();
+  write(root, ".claude/settings.json", "{ not json");
+  const result = cli(["hook", "install", "--platform", "claude"], root);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /not plain JSON/);
+  assert.equal(readFileSync(join(root, ".claude", "settings.json"), "utf8"), "{ not json");
+  assert.equal(existsSync(join(root, ".git", "hooks", "pre-commit")), false);
+});

@@ -1,3 +1,12 @@
 # Execution state: mutable. One current step. Decisions stay in .steadfast/decisions/.
 version: 1
-steps: []
+updated: 2026-10-30
+steps:
+  - id: STEP-001
+    goal: Make a new session resume where the last one stopped
+    why: Context resets lose the in-progress state, and agents skip memory they must pull.
+    paths: [src/**, schema/roadmap.schema.json, test/**, skills/steadfast/SKILL.md, README.md]
+    acceptance: npm test and steadfast check --strict pass
+    status: done
+    evidence: test/checkpoint.test.ts
+    decisions: [ADR-0018, ADR-0019]

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { FINDING_FIELDS } from "../src/core/finding.js";
-import { ROADMAP_FIELDS, STEP_FIELDS } from "../src/core/roadmap.js";
+import { CHECKPOINT_FIELDS, ROADMAP_FIELDS, STEP_FIELDS } from "../src/core/roadmap.js";
 import {
   CONFIG_BUDGET_FIELDS,
   CONFIG_FIELDS,
@@ -195,12 +195,17 @@ test("json schemas stay in sync with the validator", () => {
           decisions: { items: { maxLength?: number } };
         };
       };
+      checkpoint: { properties: Record<string, unknown> };
     };
   };
   assert.deepEqual(Object.keys(roadmap.properties).sort(), [...ROADMAP_FIELDS].sort());
   assert.deepEqual(Object.keys(roadmap.$defs.step.properties).sort(), [...STEP_FIELDS].sort());
   assert.equal(roadmap.allOf.length, 1);
-  assert.equal(roadmap.$defs.step.allOf.length, 2);
+  assert.equal(roadmap.$defs.step.allOf.length, 3);
+  assert.deepEqual(
+    Object.keys(roadmap.$defs.checkpoint.properties).sort(),
+    [...CHECKPOINT_FIELDS].sort(),
+  );
   assert.equal(roadmap.$defs.step.properties.id.maxLength, 32);
   assert.equal(roadmap.$defs.step.properties.decisions.items.maxLength, 32);
   assert.ok(roadmap.$defs.step.properties.paths.items.pattern?.includes("\\."));

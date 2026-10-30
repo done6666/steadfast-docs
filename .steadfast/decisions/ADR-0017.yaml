@@ -16,5 +16,5 @@ decision: Findings are append-only, target-versioned observations; they enter co
 why:
   - Facts code cannot prove yet are lost between sessions, but a second decision store would drift.
 enforced_by: test/finding.test.ts
-verified_by: h1:83994bc5706a9a709258a4e4933f6257c195c5e9e92aa890feb9de155aa8b044
+verified_by: h1:773140bd04fd73c0684c19225324665a999dee2ada7e0fbafc065a6165860165
 by: agent
