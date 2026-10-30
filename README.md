@@ -54,11 +54,11 @@ One-time setup. After this, you do not run the loop; the agent does.
 ```bash
 npx steadfast-docs init
 npx steadfast-docs mcp install --platform opencode   # or --platform claude
-npx steadfast-docs hook install                      # add --platform claude for a session-start brief
+npx steadfast-docs hook install --platform opencode  # or claude: pushes the brief into new or compacted sessions
 npx steadfast-docs skill install --platform opencode
 ```
 
-`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. `mcp install` gives the agent native tools, `hook install` gates commits (and with `--platform claude` starts every session with the brief), and the skill teaches the loop. From then on, you talk to the agent:
+`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. `mcp install` gives the agent native tools, `hook install` gates commits (and with `--platform` pushes the brief into new or compacted sessions), and the skill teaches the loop. From then on, you talk to the agent:
 
 > “Add a refund endpoint.”
 
@@ -79,7 +79,9 @@ The server exposes `brief`, `context`, `check`, `verify`, `new`, `finding`, `exp
 
 `hook install` adds a managed block to the real git hooks directory (respecting a repo-local `core.hooksPath`, worktrees and submodules) that runs `check --strict --staged --diff HEAD`. `--staged` refuses to validate a working tree that differs from the index, so what the hook approves is what the commit contains. An existing hook is chained as `pre-commit.steadfast-original` (non-shell hooks included), runs before the check, and is restored by `hook remove`. A hooks directory shared outside the repository is refused, because a project-specific hook would run in every repo.
 
-`hook install --platform claude` also adds a `SessionStart` hook to `.claude/settings.json` that runs `brief`. Every new, resumed, cleared or compacted Claude Code session starts with the current step and its checkpoint, so the agent never has to remember to ask. Other hooks and settings are preserved, and `hook remove --platform claude` takes out only this entry. OpenCode has no documented session-start context hook; there the `AGENTS.md` contract tells the agent to run `brief`. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
+`hook install --platform claude` also adds a `SessionStart` hook to `.claude/settings.json` that runs `brief`. Every new, resumed, cleared or compacted Claude Code session starts with the current step and its checkpoint, so the agent never has to remember to ask. Other hooks and settings are preserved, and `hook remove --platform claude` takes out only this entry.
+
+`hook install --platform opencode` writes a managed plugin, `.opencode/plugins/steadfast-brief.js`, for OpenCode's `experimental.session.compacting` hook (experimental upstream, so it may change). When a session fills up and compacts, the plugin runs the project's own `brief` (the CLI in `node_modules`, the local build, or `npx`) and adds it to the compaction context, so the summary the session continues from carries the current step and its checkpoint. If `brief` fails, the plugin tells the agent to run it instead. OpenCode documents no session-start context hook, so a brand-new session still relies on the `AGENTS.md` contract to run `brief`. `hook remove --platform opencode` deletes only that file, and a plugin file steadfast did not write is never overwritten or removed. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
 
 ## What a decision looks like
 
@@ -186,7 +188,7 @@ append-only: correct one by appending a successor with `supersedes`.
 | `npx steadfast-docs verify <ids> --assume` | Recompute fingerprints after the tests pass |
 | `npx steadfast-docs retire <path> --apply [--no-stage]` | Delete legacy docs, stage the change and enforce `retired_docs` |
 | `npx steadfast-docs mcp install` | Register the MCP server (or run `mcp` to start it) |
-| `npx steadfast-docs hook install [--platform claude]` | Add the managed pre-commit `check` and the session-start brief |
+| `npx steadfast-docs hook install [--platform claude\|opencode]` | Add the managed pre-commit `check` and the session-start or compaction brief |
 | `npx steadfast-docs doctor` | Diagnose contract, skill, MCP, hook, freshness and advisories |
 | `npx steadfast-docs skill install --platform opencode` | Install the agent loop (or `claude`) |
 

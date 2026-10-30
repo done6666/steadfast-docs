@@ -10,3 +10,11 @@ steps:
     status: done
     evidence: test/checkpoint.test.ts
     decisions: [ADR-0018, ADR-0019]
+  - id: STEP-002
+    goal: Push the brief into every OpenCode compaction
+    why: OpenCode has no session-start hook, so a compacted session loses the step unless the summary carries it.
+    paths: [src/commands/hook.ts, src/commands/mcp.ts, test/hook.test.ts, README.md]
+    acceptance: npm test and steadfast check --strict pass
+    status: done
+    evidence: test/hook.test.ts
+    decisions: [ADR-0020]

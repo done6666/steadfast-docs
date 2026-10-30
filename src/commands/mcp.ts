@@ -38,7 +38,7 @@ function commandExists(name: string): boolean {
   return spawnSync(finder, [name], { stdio: "ignore" }).status === 0;
 }
 
-function targetProblem(
+export function targetProblem(
   root: string,
   path: string,
   allowOutside = false,
@@ -65,10 +65,10 @@ function targetProblem(
   }
 }
 
-export function writeConfig(
+export function writeText(
   root: string,
   path: string,
-  config: Record<string, unknown>,
+  content: string,
   allowOutside = false,
 ): string {
   const problem = targetProblem(root, path, allowOutside);
@@ -76,9 +76,18 @@ export function writeConfig(
 
   mkdirSync(dirname(path), { recursive: true });
   const temporary = join(dirname(path), `.${basename(path)}.${process.pid}.tmp`);
-  writeFileSync(temporary, `${JSON.stringify(config, null, 2)}\n`);
+  writeFileSync(temporary, content);
   renameSync(temporary, path);
   return path;
+}
+
+export function writeConfig(
+  root: string,
+  path: string,
+  config: Record<string, unknown>,
+  allowOutside = false,
+): string {
+  return writeText(root, path, `${JSON.stringify(config, null, 2)}\n`, allowOutside);
 }
 
 function opencodeConfigPaths(root: string, global: boolean): string[] {
