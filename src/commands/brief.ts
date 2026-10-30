@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { buildFindingGraph, findingTokens, staleFindingAge } from "../core/finding.js";
 import { tryGit } from "../core/git.js";
 import { buildGraph } from "../core/graph.js";
-import { loadRoadmap, stepTokens } from "../core/roadmap.js";
+import { checkpointLines, loadRoadmap, stepTokens } from "../core/roadmap.js";
 import { loadProject } from "../core/store.js";
 import { estimateTokens, recordTokens } from "../core/tokens.js";
 import { write, writeError } from "../output.js";
@@ -84,6 +84,7 @@ function stepDetail(step: Step): string[] {
 function roadmapSections(roadmap: Roadmap | undefined): {
   summary: string[];
   current: Section;
+  checkpoint: Section;
   next: Section;
   blocked: Section;
 } {
@@ -91,6 +92,7 @@ function roadmapSections(roadmap: Roadmap | undefined): {
     return {
       summary: ["roadmap: none (create .steadfast/roadmap.yaml)"],
       current: { name: "current", lines: [], optional: false },
+      checkpoint: { name: "checkpoint", lines: [], optional: false },
       next: { name: "next", lines: [], optional: true },
       blocked: { name: "blocked", lines: [], optional: true },
     };
@@ -107,6 +109,16 @@ function roadmapSections(roadmap: Roadmap | undefined): {
     currentStep === undefined
       ? { name: "current", lines: ["current: none"], optional: false }
       : { name: "current", lines: ["current:", ...stepDetail(currentStep).map((line) => `  ${line}`)], optional: false };
+  const checkpoint: Section = {
+    name: "checkpoint",
+    lines:
+      currentStep === undefined
+        ? []
+        : currentStep.checkpoint === undefined
+          ? ["checkpoint: none (write checkpoint.next before the session ends)"]
+          : ["checkpoint:", ...checkpointLines(currentStep.checkpoint).map((line) => `  ${line}`)],
+    optional: false,
+  };
 
   const nextSteps = roadmap.steps.filter((step) => step.status === "todo").slice(0, 2);
   const next =
@@ -127,7 +139,7 @@ function roadmapSections(roadmap: Roadmap | undefined): {
           optional: true,
         };
 
-  return { summary, current, next, blocked };
+  return { summary, current, checkpoint, next, blocked };
 }
 
 function memoryLine(
@@ -192,6 +204,7 @@ function render(
   }
   if (count() > bodyBudget) {
     const current = present.find((section) => section.name === "current");
+    const checkpoint = present.find((section) => section.name === "checkpoint");
     const summary = present.filter((section) =>
       ["memory", "git", "roadmap"].includes(section.name),
     );
@@ -199,6 +212,7 @@ function render(
       current === undefined
         ? summary
         : [...summary, { ...current, lines: current.lines.slice(0, 2).map((line) => truncate(line, 60)) }];
+    if (checkpoint !== undefined) fallback.push(checkpoint);
     present = fallback;
     omitted.push("detail");
   }
@@ -241,8 +255,8 @@ export async function briefCommand(argv: string[]): Promise<number> {
   if (values.help) {
     write("steadfast brief [--json] [--budget <tokens>]");
     write("");
-    write("  Prints the current roadmap step, next steps, blockers, recent commits,");
-    write("  worktrees and memory stats. Run at the start of a session.");
+    write("  Prints the current roadmap step and its checkpoint, next steps, blockers,");
+    write("  recent commits, worktrees and memory stats. Run at the start of a session.");
     write("  --budget may only lower budgets.brief_tokens.");
     return 0;
   }
@@ -337,6 +351,7 @@ export async function briefCommand(argv: string[]): Promise<number> {
     { name: "worktrees", lines: worktreeLine, optional: true },
     { name: "roadmap", lines: sections.summary, optional: false },
     sections.current,
+    sections.checkpoint,
     {
       name: "warnings",
       lines:
@@ -396,6 +411,7 @@ export async function briefCommand(argv: string[]): Promise<number> {
           budget: cap,
           omitted: output.omitted,
           current: currentStep?.id ?? null,
+          checkpoint: currentStep?.checkpoint ?? null,
           next: next.map((step) => step.id),
           blocked: blocked.map((step) => step.id),
           memory: { tokens: memory.tokens },

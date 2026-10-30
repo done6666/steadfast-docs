@@ -10,7 +10,7 @@ decision: The canonical skill is budgeted, and every project copy is verified ag
 why:
   - Global copies are user-managed; project copies are enforced.
 enforced_by: test/skill.test.ts
-verified_by: h1:19c49b970bd9e616aa6976151bc1374a34600f44246f9810118e78944c18f061
+verified_by: h1:806e39cb49f2b5381b9059240f86c23514831f67c0a32c6b774d42e63bc7eb4b
 supersedes:
   - ADR-0006
 by: agent

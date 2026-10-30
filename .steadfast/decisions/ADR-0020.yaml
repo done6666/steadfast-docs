@@ -1,0 +1,18 @@
+id: ADR-0020
+topic: session-start
+scope: global
+status: active
+created: 2026-10-30
+applies_to:
+  - src/commands/hook.ts
+  - test/hook.test.ts
+decision: hook install --platform claude adds a SessionStart brief; --platform opencode writes a managed .opencode/plugins/steadfast-brief.js pushing brief into compaction context.
+why:
+  - Agents skip memory they must pull; harness hooks push it at Claude session start and into every OpenCode compaction.
+rejected:
+  - "Setting output.prompt: it replaces OpenCode's own compaction prompt instead of adding to it."
+enforced_by: test/hook.test.ts
+verified_by: h1:c1bafd596bfa9c6895d6fbdcc960533022f286c3fa36190ffdb5bb2e19106ad5
+supersedes:
+  - ADR-0019
+by: agent

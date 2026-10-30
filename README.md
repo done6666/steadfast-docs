@@ -1,23 +1,24 @@
 # steadfast-docs
 
-**Normative project memory for AI coding agents.**
+**Repository memory for AI coding agents.**
 
-Documentation that only agents read. Humans ask; agents remember; CI keeps the memory honest.
+Documentation that only agents read. A new session resumes where the last one stopped; humans ask, agents remember, and CI keeps the memory honest.
 
 [![npm](https://img.shields.io/npm/v/steadfast-docs?color=black&label=npm)](https://www.npmjs.com/package/steadfast-docs)
 [![ci](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml/badge.svg)](https://github.com/done6666/steadfast-docs/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-172-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
+[![tests](https://img.shields.io/badge/tests-184-black)](https://github.com/done6666/steadfast-docs/tree/main/test)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-black)](https://github.com/done6666/steadfast-docs/blob/main/package.json)
 [![license](https://img.shields.io/badge/license-MIT-black)](https://github.com/done6666/steadfast-docs/blob/main/LICENSE)
 
 ## Why
 
-Agent-written documentation fails in two ways:
+Large projects outlive a context window. Agent-written documentation fails in three ways:
 
-1. **It rots.** A decision changes in conversation but not in the file. Copies multiply, and the agent follows the wrong one.
-2. **It floods the context.** A project with 40 ADRs is roughly 50K tokens. Accuracy drops as input grows, so the agent pays more and reasons worse.
+1. **It forgets.** The context fills, a new session starts, and the in-progress state (what is done, what is next, what is still a guess) is gone.
+2. **It rots.** A decision changes in conversation but not in the file. Copies multiply, and the agent follows the wrong one.
+3. **It floods the context.** A project with 40 ADRs is roughly 50K tokens. Accuracy drops as input grows, so the agent pays more and reasons worse, and skips docs it was told to read.
 
-Adding more documentation makes both worse.
+Adding more documentation makes all three worse.
 
 ## The idea
 
@@ -28,6 +29,7 @@ Store only what code cannot prove: the rule, the reason, and the alternatives al
 | **Invariants** | 10–25 laws, always loaded | ~400 tokens |
 | **Decisions** | append-only YAML, never edited | ≤160 tokens each |
 | **Guards** | `deny` / `instead` / `check` | ≤3 per decision |
+| **Checkpoint** | where the last session stopped, rewritten in place | 1 next, ≤3 done, ≤2 open |
 | **Context pack** | compiled per task, only matching records | hard token cap |
 
 No compiled state is committed. The pack is generated on demand, so there is no second copy to go stale.
@@ -52,15 +54,15 @@ One-time setup. After this, you do not run the loop; the agent does.
 ```bash
 npx steadfast-docs init
 npx steadfast-docs mcp install --platform opencode   # or --platform claude
-npx steadfast-docs hook install
+npx steadfast-docs hook install --platform opencode  # or claude: pushes the brief into new or compacted sessions
 npx steadfast-docs skill install --platform opencode
 ```
 
-`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. `mcp install` gives the agent native tools, `hook install` gates commits, and the skill teaches the loop. From then on, you talk to the agent:
+`init` writes `.steadfast/` and appends the contract to `AGENTS.md`. `mcp install` gives the agent native tools, `hook install` gates commits (and with `--platform` pushes the brief into new or compacted sessions), and the skill teaches the loop. From then on, you talk to the agent:
 
 > “Add a refund endpoint.”
 
-The agent plans the paths, calls `context`, reads only the pack, implements, runs the tests, calls `check` and `verify`, and appends a decision when it made a non-obvious choice. You see a short summary and the decisions that need approval — never a document to review.
+The agent reads the brief, resumes from the checkpoint, plans the paths, calls `context`, reads only the pack, implements, runs the tests, calls `check` and `verify`, rewrites the checkpoint, and appends a decision when it made a non-obvious choice. You see a short summary and the decisions that need approval — never a document to review.
 
 `context --for` accepts files, directories or globs. A directory expands to the files beneath it, and a glob expands to the files it matches, so `src/core` finds a rule declared for `src/core/pack.ts`. A selector that matches no decision is called out in the pack; `--strict` turns that into a failure.
 
@@ -75,7 +77,11 @@ The agent plans the paths, calls `context`, reads only the pack, implements, run
 
 The server exposes `brief`, `context`, `check`, `verify`, `new`, `finding`, `explain`, `supersede` and `doctor`. It is a JSON-RPC wrapper over the same CLI, so there is one implementation and two entry points. `--print` shows the config without writing it; `--check` verifies an existing install.
 
-`hook install` adds a managed block to the real git hooks directory (respecting a repo-local `core.hooksPath`, worktrees and submodules) that runs `check --strict --staged --diff HEAD`. `--staged` refuses to validate a working tree that differs from the index, so what the hook approves is what the commit contains. An existing hook is chained as `pre-commit.steadfast-original` (non-shell hooks included), runs before the check, and is restored by `hook remove`. A hooks directory shared outside the repository is refused, because a project-specific hook would run in every repo. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
+`hook install` adds a managed block to the real git hooks directory (respecting a repo-local `core.hooksPath`, worktrees and submodules) that runs `check --strict --staged --diff HEAD`. `--staged` refuses to validate a working tree that differs from the index, so what the hook approves is what the commit contains. An existing hook is chained as `pre-commit.steadfast-original` (non-shell hooks included), runs before the check, and is restored by `hook remove`. A hooks directory shared outside the repository is refused, because a project-specific hook would run in every repo.
+
+`hook install --platform claude` also adds a `SessionStart` hook to `.claude/settings.json` that runs `brief`. Every new, resumed, cleared or compacted Claude Code session starts with the current step and its checkpoint, so the agent never has to remember to ask. Other hooks and settings are preserved, and `hook remove --platform claude` takes out only this entry.
+
+`hook install --platform opencode` writes a managed plugin, `.opencode/plugins/steadfast-brief.js`, for OpenCode's `experimental.session.compacting` hook (experimental upstream, so it may change). When a session fills up and compacts, the plugin runs the project's own `brief` (the CLI in `node_modules`, the local build, or `npx`) and adds it to the compaction context, so the summary the session continues from carries the current step and its checkpoint. If `brief` fails, the plugin tells the agent to run it instead. OpenCode documents no session-start context hook, so a brand-new session still relies on the `AGENTS.md` contract to run `brief`. `hook remove --platform opencode` deletes only that file, and a plugin file steadfast did not write is never overwritten or removed. `doctor` then reports the contract, skill copy, MCP config, hook, freshness, advisory rules and retired docs in one pass.
 
 ## What a decision looks like
 
@@ -113,12 +119,23 @@ steps:
     acceptance: pnpm test --filter worker
     status: current
     decisions: [ADR-0017]
+    checkpoint:
+      next: Wire the cleanup job into the scheduler
+      done: ["Migration and handler"]
+      open: ["Retention window of 90 days is a guess"]
 ```
 
 One step is `current`; `done` requires evidence (a test or commit). `brief`
-compiles a ≤300-token session view — current step, next steps, blockers, recent
-commits, worktrees and memory stats — and stores nothing. The full roadmap is
-never loaded into context.
+compiles a ≤300-token session view — current step and checkpoint, next steps,
+blockers, recent commits, worktrees and memory stats — and stores nothing. The
+full roadmap is never loaded into context.
+
+The checkpoint is where the last session stopped: the next concrete action,
+what is done, and what is still open. It is rewritten in place, never
+appended. `check --diff` fails when the current step's paths change but its
+checkpoint does not, so every commit leaves a resume point even if the context
+runs out mid-task. Done steps carry none; lasting facts move into findings or
+decisions.
 
 ## What a finding is
 
@@ -149,6 +166,7 @@ append-only: correct one by appending a successor with `supersedes`.
 - **Append-only.** Change a rule by appending a record with `supersedes: [ADR-0012]`. `superseded` is derived, never written. Two active records cannot share a `(scope, topic)`.
 - **Content fingerprints.** `verified_by` hashes the files matched by `applies_to`, not a commit sha. Verify before committing; rebases cannot invalidate it.
 - **Declared enforcement.** `enforced_by` is a test path or a `!command`. `check` verifies that a test path exists but never runs it; `verify --assume` is an explicit assertion that the test passed. Rules without one are advisory and are flagged after `advisory_ttl_days` (a failure under `--strict`).
+- **Resume points move with the work.** A commit that touches the current step without rewriting its checkpoint fails `check --strict`.
 - **Hard budgets.** Per record, per pack, per invariant list, enforced against a conservative token estimate. `context` exits 2 with the token or guard count needed, so the agent can ask before raising the budget; `--budget` may only lower the configured cap, and `--allow-partial` is the explicit escape hatch.
 - **Negative memory.** Rejected proposals are first-class records, so the agent does not re-litigate dead ends.
 - **Retired docs stay retired.** `retire` deletes the old documentation and records the glob; `check` fails if it reappears. In a git worktree it stages the deletion and the config update, so `check` sees the retired state immediately; `--no-stage` leaves both for selective staging. Git history is the archive.
@@ -170,7 +188,7 @@ append-only: correct one by appending a successor with `supersedes`.
 | `npx steadfast-docs verify <ids> --assume` | Recompute fingerprints after the tests pass |
 | `npx steadfast-docs retire <path> --apply [--no-stage]` | Delete legacy docs, stage the change and enforce `retired_docs` |
 | `npx steadfast-docs mcp install` | Register the MCP server (or run `mcp` to start it) |
-| `npx steadfast-docs hook install` | Add the managed pre-commit `check` |
+| `npx steadfast-docs hook install [--platform claude\|opencode]` | Add the managed pre-commit `check` and the session-start or compaction brief |
 | `npx steadfast-docs doctor` | Diagnose contract, skill, MCP, hook, freshness and advisories |
 | `npx steadfast-docs skill install --platform opencode` | Install the agent loop (or `claude`) |
 
@@ -247,6 +265,7 @@ node dist/src/cli.js check --strict
 ## Status
 
 0.5.0 published. The agent-native slice is complete: `init`, `brief`, `new`, `finding`, `explain`, `supersede`, `context`, `check`, `verify`, `retire`, `skill`, `mcp`, `hook`, `doctor`.
+Unreleased: roadmap checkpoints that a commit must move, and a Claude Code session-start brief.
 A real-project pilot has completed and is kept as a lab branch, not adopted. Next is a new adoption pilot; task-scope contracts (`start` / `check` / `end`) only if real use needs them.
 
 ## License

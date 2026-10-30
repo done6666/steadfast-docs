@@ -1,0 +1,20 @@
+id: ADR-0018
+topic: session-checkpoint
+scope: global
+status: active
+created: 2026-10-30
+applies_to:
+  - src/core/roadmap.ts
+  - src/commands/brief.ts
+  - src/commands/check.ts
+  - schema/roadmap.schema.json
+  - test/checkpoint.test.ts
+decision: The current roadmap step carries a checkpoint rewritten in place; check --diff fails when the step's paths change but the checkpoint does not.
+why:
+  - A context reset loses in-progress state; binding the resume point to commits saves it without predicting when context runs out.
+rejected:
+  - "Appended session log: grows without bound and becomes the docs that rot."
+  - "Date-based staleness: an old date says nothing about whether the work moved."
+enforced_by: test/checkpoint.test.ts
+by: agent
+verified_by: h1:bc4b3504b62cf4de1d660149180b7b92fb065af552bd060a9424df7093207c29

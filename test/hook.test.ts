@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 import { CLI, cli, tempDir, write } from "./helpers.js";
 
 const BEGIN = "# steadfast:begin";
@@ -401,4 +402,175 @@ test("the hook works when the project is below the git root", () => {
     encoding: "utf8",
   });
   assert.equal(passed.status, 0, `${passed.stdout}${passed.stderr}`);
+});
+
+test("hook install --platform claude runs brief at every session start", () => {
+  const root = project();
+  write(
+    root,
+    ".claude/settings.json",
+    JSON.stringify({
+      permissions: { allow: ["Bash(ls)"] },
+      hooks: { SessionStart: [{ hooks: [{ type: "command", command: "echo hi" }] }] },
+    }),
+  );
+
+  assert.equal(cli(["hook", "install", "--platform", "claude"], root).status, 0);
+  assert.equal(cli(["hook", "install", "--platform", "claude"], root).status, 0);
+  const settings = JSON.parse(readFileSync(join(root, ".claude", "settings.json"), "utf8")) as {
+    permissions: unknown;
+    hooks: { SessionStart: Array<{ matcher?: string; hooks: Array<{ command: string }> }> };
+  };
+  assert.deepEqual(settings.permissions, { allow: ["Bash(ls)"] });
+  const commands = settings.hooks.SessionStart.flatMap((entry) => entry.hooks.map((hook) => hook.command));
+  assert.deepEqual(commands, ["echo hi", "npx -y steadfast-docs brief"]);
+  assert.ok(settings.hooks.SessionStart.every((entry) => entry.matcher === undefined));
+
+  const check = cli(["hook", "install", "--platform", "claude", "--check"], root);
+  assert.equal(check.status, 0, check.stderr);
+  assert.match(check.stdout, /SessionStart brief/);
+
+  assert.equal(cli(["hook", "remove", "--platform", "claude"], root).status, 0);
+  const after = JSON.parse(readFileSync(join(root, ".claude", "settings.json"), "utf8")) as {
+    hooks: { SessionStart: Array<{ hooks: Array<{ command: string }> }> };
+  };
+  assert.deepEqual(
+    after.hooks.SessionStart.flatMap((entry) => entry.hooks.map((hook) => hook.command)),
+    ["echo hi"],
+  );
+  const missing = cli(["hook", "install", "--platform", "claude", "--check"], root);
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /missing: SessionStart brief/);
+});
+
+test("hook install --platform prefers a locally installed CLI", () => {
+  const root = project();
+  write(root, "node_modules/.bin/steadfast", "#!/bin/sh\n");
+  assert.equal(cli(["hook", "install", "--platform", "claude"], root).status, 0);
+  const text = readFileSync(join(root, ".claude", "settings.json"), "utf8");
+  assert.match(text, /\.\/node_modules\/\.bin\/steadfast brief/);
+});
+
+test("hook install refuses unknown platforms", () => {
+  const root = project();
+  const cursor = cli(["hook", "install", "--platform", "cursor"], root);
+  assert.equal(cursor.status, 2);
+  assert.match(cursor.stderr, /use claude or opencode/);
+  assert.equal(existsSync(join(root, ".git", "hooks", "pre-commit")), false);
+});
+
+type CompactingHook = (
+  input: { sessionID: string },
+  output: { context: string[]; prompt?: string },
+) => Promise<void>;
+
+async function compact(pluginPath: string): Promise<string[]> {
+  const copy = pluginPath.replace(/\.js$/, ".mjs");
+  writeFileSync(copy, readFileSync(pluginPath, "utf8"));
+  const module = (await import(pathToFileURL(copy).href)) as Record<string, unknown>;
+  assert.deepEqual(Object.keys(module), ["SteadfastBrief"]);
+  const plugin = module.SteadfastBrief as () => Promise<Record<string, CompactingHook>>;
+  const hooks = await plugin();
+  const output: { context: string[]; prompt?: string } = { context: [] };
+  const compacting = hooks["experimental.session.compacting"];
+  assert.ok(compacting);
+  await compacting({ sessionID: "s" }, output);
+  assert.equal(output.prompt, undefined);
+  return output.context;
+}
+
+test("hook install --platform opencode pushes brief into every compaction", async () => {
+  const root = project();
+  const bin = join(root, "node_modules", ".bin");
+  mkdirSync(bin, { recursive: true });
+  const shim = join(bin, "steadfast");
+  writeFileSync(shim, `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(CLI)} "$@"\n`);
+  chmodSync(shim, 0o755);
+  write(
+    root,
+    ".steadfast/roadmap.yaml",
+    `version: 1
+updated: 2026-10-30
+steps:
+  - id: STEP-001
+    goal: Add the cleanup job
+    why: Inactive users keep rows forever.
+    paths: [src]
+    acceptance: run test/a.test.ts
+    status: current
+    checkpoint:
+      next: Wire the job into the scheduler
+`,
+  );
+  write(root, ".opencode/plugins/other.js", "export const Other = async () => ({});\n");
+
+  assert.equal(cli(["hook", "install", "--platform", "opencode"], root).status, 0);
+  const installed = cli(["hook", "install", "--platform", "opencode"], root);
+  assert.equal(installed.status, 0, installed.stderr);
+  assert.match(installed.stdout, /compaction brief/);
+  assert.ok(existsSync(join(root, ".git", "hooks", "pre-commit")));
+  const pluginPath = join(root, ".opencode", "plugins", "steadfast-brief.js");
+  const plugin = readFileSync(pluginPath, "utf8");
+  assert.match(plugin, /^\/\/ steadfast:managed/);
+  assert.match(plugin, /"experimental\.session\.compacting"/);
+  assert.match(plugin, /\["\.\/node_modules\/\.bin\/steadfast","brief"\]/);
+
+  const context = await compact(pluginPath);
+  assert.equal(context.length, 1);
+  const pushed = context.join("\n");
+  assert.match(pushed, /# steadfast brief v1/);
+  assert.match(pushed, /STEP-001 Add the cleanup job/);
+  assert.match(pushed, /next: Wire the job into the scheduler/);
+
+  const check = cli(["hook", "install", "--platform", "opencode", "--check"], root);
+  assert.equal(check.status, 0, check.stderr);
+  assert.match(check.stdout, /compaction brief/);
+
+  assert.equal(cli(["hook", "remove", "--platform", "opencode"], root).status, 0);
+  assert.equal(existsSync(pluginPath), false);
+  assert.equal(existsSync(join(root, ".git", "hooks", "pre-commit")), false);
+  assert.ok(existsSync(join(root, ".opencode", "plugins", "other.js")));
+  const missing = cli(["hook", "install", "--platform", "opencode", "--check"], root);
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /missing: OpenCode compaction brief/);
+});
+
+test("the compaction plugin tells the agent to run brief when brief fails", async () => {
+  const root = project();
+  write(root, "node_modules/.bin/steadfast", "#!/bin/sh\nexit 1\n");
+  chmodSync(join(root, "node_modules", ".bin", "steadfast"), 0o755);
+  assert.equal(cli(["hook", "install", "--platform", "opencode"], root).status, 0);
+
+  const context = await compact(join(root, ".opencode", "plugins", "steadfast-brief.js"));
+  assert.deepEqual(context, [
+    "steadfast brief failed during compaction; run it first to recover the current roadmap step.",
+  ]);
+});
+
+test("hook --platform opencode never touches a plugin it did not write", () => {
+  const root = project();
+  const pluginPath = join(root, ".opencode", "plugins", "steadfast-brief.js");
+  write(root, ".opencode/plugins/steadfast-brief.js", "export const Mine = async () => ({});\n");
+
+  const refused = cli(["hook", "install", "--platform", "opencode"], root);
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /not managed by steadfast/);
+  assert.equal(existsSync(join(root, ".git", "hooks", "pre-commit")), false);
+  assert.equal(cli(["hook", "install", "--platform", "opencode", "--check"], root).status, 1);
+
+  assert.equal(cli(["hook", "install"], root).status, 0);
+  const removed = cli(["hook", "remove", "--platform", "opencode"], root);
+  assert.equal(removed.status, 0, removed.stderr);
+  assert.match(removed.stdout, /not managed by steadfast; left untouched/);
+  assert.equal(readFileSync(pluginPath, "utf8"), "export const Mine = async () => ({});\n");
+});
+
+test("hook install --platform claude refuses malformed settings", () => {
+  const root = project();
+  write(root, ".claude/settings.json", "{ not json");
+  const result = cli(["hook", "install", "--platform", "claude"], root);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /not plain JSON/);
+  assert.equal(readFileSync(join(root, ".claude", "settings.json"), "utf8"), "{ not json");
+  assert.equal(existsSync(join(root, ".git", "hooks", "pre-commit")), false);
 });

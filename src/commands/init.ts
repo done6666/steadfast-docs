@@ -15,7 +15,8 @@ const AGENTS_BLOCK = `${BEGIN}
 If the steadfast MCP server is connected, call \`steadfast_context\` (OpenCode) or \`mcp__steadfast__context\` (Claude) with the paths you will touch; otherwise run \`npx steadfast-docs context --for <paths>\`. Use only that output for context.
 If context fails, narrow the paths or ask the human before raising the budget; do not pass \`--allow-partial\`.
 Records are not reading material: do not load other records, legacy docs or architecture notes. The pack is the only context.
-At session start, run \`npx steadfast-docs brief\` to recover the current roadmap step. Update \`.steadfast/roadmap.yaml\` when a step starts or finishes.
+At session start, run \`npx steadfast-docs brief\` to recover the current roadmap step and its checkpoint. Update \`.steadfast/roadmap.yaml\` when a step starts or finishes.
+Before each commit and before the session ends, rewrite the current step's \`checkpoint\` (\`next\`, \`done\`, \`open\`) so the next session resumes where this one stopped.
 If you discover a fact code cannot prove yet, record a finding; retire it when a test proves it.
 After a new record, fill the record you just created. Never edit an active record; supersede it.
 

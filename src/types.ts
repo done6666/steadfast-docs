@@ -103,6 +103,13 @@ export interface Step {
   blocked_by?: string;
   decisions?: string[];
   findings?: string[];
+  checkpoint?: Checkpoint;
+}
+
+export interface Checkpoint {
+  next: string;
+  done?: string[];
+  open?: string[];
 }
 
 export interface Roadmap {

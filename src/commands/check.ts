@@ -21,13 +21,13 @@ import { matchesAny } from "../core/glob.js";
 import type { Change } from "../core/git.js";
 import { buildGraph } from "../core/graph.js";
 import { safeFile } from "../core/paths.js";
-import { loadRoadmap } from "../core/roadmap.js";
+import { checkpointKey, loadRoadmap, ROADMAP_FILE, validateRoadmap } from "../core/roadmap.js";
 import { installedSkillTargets, readCanonicalSkill } from "../core/skill.js";
 import { loadProject } from "../core/store.js";
 import { estimateTokens, recordTokens } from "../core/tokens.js";
 import { validateConfig, validateDecision } from "../core/validate.js";
 import { paint, write, writeError } from "../output.js";
-import type { Config, Decision, Finding, Issue } from "../types.js";
+import type { Checkpoint, Config, Decision, Finding, Issue, Step } from "../types.js";
 import { resolveExistingRoot } from "./shared.js";
 
 const DEBT_TRIGGERS: RegExp[] = [
@@ -117,6 +117,24 @@ function canonical(decision: Decision): string {
     supersedes: [...(decision.supersedes ?? [])].sort(),
     by: decision.by,
   });
+}
+
+function underStep(path: string, step: Step): boolean {
+  return (
+    matchesAny(path, step.paths) ||
+    step.paths.some((selector) => path.startsWith(`${selector.replace(/\/+$/, "")}/`))
+  );
+}
+
+function checkpointAtRef(root: string, ref: string, id: string): Checkpoint | undefined {
+  const text = fileAtRef(root, ref, ROADMAP_FILE);
+  if (text === undefined) return undefined;
+  try {
+    return validateRoadmap(parse(text), ROADMAP_FILE).value?.steps.find((step) => step.id === id)
+      ?.checkpoint;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function checkCommand(argv: string[]): Promise<number> {
@@ -581,6 +599,29 @@ export async function checkCommand(argv: string[]): Promise<number> {
             .join(", ")}${triggers.length > 3 ? ` +${triggers.length - 3}` : ""}`,
           fix: "steadfast new --scope global --topic <topic> --decision \"<rule>\"",
         });
+      }
+
+      if (roadmapCurrent !== undefined) {
+        const touched = changed.filter(
+          (path) => path !== ROADMAP_FILE && underStep(path, roadmapCurrent),
+        );
+        if (
+          touched.length > 0 &&
+          (roadmapCurrent.checkpoint === undefined ||
+            checkpointKey(roadmapCurrent.checkpoint) ===
+              checkpointKey(checkpointAtRef(root, ref, roadmapCurrent.id)))
+        ) {
+          issues.push({
+            severity: "warning",
+            code: "roadmap/checkpoint-stale",
+            message: `${roadmapCurrent.id} paths changed but its checkpoint did not: ${touched
+              .slice(0, 3)
+              .join(", ")}${touched.length > 3 ? ` +${touched.length - 3}` : ""}`,
+            file: ROADMAP_FILE,
+            id: roadmapCurrent.id,
+            fix: "rewrite checkpoint.next (and done, open) so the next session can resume",
+          });
+        }
       }
 
       const readRecord = (file: string): Decision | undefined => {

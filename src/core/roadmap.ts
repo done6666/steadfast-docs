@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
-import type { Issue, Roadmap, Severity, Step, StepStatus } from "../types.js";
+import type { Checkpoint, Issue, Roadmap, Severity, Step, StepStatus } from "../types.js";
 import { estimateTokens } from "./tokens.js";
 import { safeFile } from "./paths.js";
 import { isObject } from "../util.js";
@@ -18,7 +18,9 @@ export const STEP_FIELDS = [
   "blocked_by",
   "decisions",
   "findings",
+  "checkpoint",
 ] as const;
+export const CHECKPOINT_FIELDS = ["next", "done", "open"] as const;
 
 const STEP_ID_RE = /^STEP-[0-9]{3,}$/;
 const DECISION_ID_RE = /^ADR-[0-9]{4,}$/;
@@ -161,6 +163,33 @@ function readArray(
   return out;
 }
 
+function readCheckpoint(
+  raw: Record<string, unknown>,
+  issues: Issue[],
+  file: string,
+  id: string | undefined,
+): Checkpoint | undefined {
+  const value = raw.checkpoint;
+  if (value === undefined) return undefined;
+  if (!isObject(value)) {
+    error(issues, "schema/type", `"checkpoint" must be a mapping`, file, id);
+    return undefined;
+  }
+  for (const key of Object.keys(value)) {
+    if (!CHECKPOINT_FIELDS.includes(key as (typeof CHECKPOINT_FIELDS)[number])) {
+      error(issues, "schema/unknown-field", `unknown field "checkpoint.${key}"`, file, id, `remove "${key}"`);
+    }
+  }
+  const next = readString(value, "next", 160, issues, file, id, true);
+  const done = readArray(value, "done", 3, 100, issues, file, id, false);
+  const open = readArray(value, "open", 2, 100, issues, file, id, false);
+  if (next === undefined) return undefined;
+  const checkpoint: Checkpoint = { next };
+  if (done && done.length > 0) checkpoint.done = done;
+  if (open && open.length > 0) checkpoint.open = open;
+  return checkpoint;
+}
+
 export function validateRoadmap(
   raw: unknown,
   file: string,
@@ -276,6 +305,17 @@ export function validateRoadmap(
     if (status === "blocked" && blockedBy === undefined) {
       error(issues, "roadmap/blocked-by", "blocked steps require blocked_by: a step id or the reason", file, id);
     }
+    const checkpoint = readCheckpoint(entry, issues, file, id);
+    if (entry.checkpoint !== undefined && (status === "done" || status === "dropped")) {
+      error(
+        issues,
+        "roadmap/checkpoint-closed",
+        `${status} steps carry no checkpoint`,
+        file,
+        id,
+        "record lasting facts as findings or decisions, then remove the checkpoint",
+      );
+    }
 
     if (id === undefined || goal === undefined || why === undefined || acceptance === undefined || paths === undefined || status === undefined) {
       continue;
@@ -285,6 +325,7 @@ export function validateRoadmap(
     if (blockedBy !== undefined) value.blocked_by = blockedBy;
     if (decisions && decisions.length > 0) value.decisions = decisions;
     if (findings && findings.length > 0) value.findings = findings;
+    if (checkpoint !== undefined) value.checkpoint = checkpoint;
     steps.push(value);
   }
 
@@ -413,6 +454,21 @@ export function stepTokens(step: Step): number {
       paths: step.paths,
       decisions: step.decisions ?? [],
       findings: step.findings ?? [],
+      checkpoint: step.checkpoint ?? {},
     }),
   );
+}
+
+export function checkpointLines(checkpoint: Checkpoint): string[] {
+  return [
+    `next: ${checkpoint.next}`,
+    ...(checkpoint.done ?? []).map((item) => `done: ${item}`),
+    ...(checkpoint.open ?? []).map((item) => `open: ${item}`),
+  ];
+}
+
+/** Stable identity of a checkpoint, so a diff can tell whether it moved. */
+export function checkpointKey(checkpoint: Checkpoint | undefined): string {
+  if (checkpoint === undefined) return "";
+  return JSON.stringify([checkpoint.next, checkpoint.done ?? [], checkpoint.open ?? []]);
 }
